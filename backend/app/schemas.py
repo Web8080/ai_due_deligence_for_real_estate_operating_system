@@ -123,3 +123,26 @@ class AnalyticsSummary(BaseModel):
     total_contacts: int
     total_documents: int
     stage_distribution: Dict[str, int]
+
+
+class IntegrationStatus(BaseModel):
+    ai_provider: str
+    azure_openai_configured: bool
+    azure_blob_configured: bool
+    azure_ad_configured: bool
+    azure_key_vault_configured: bool
+    automation_mode: str
+
+
+class AutomationRecommendation(BaseModel):
+    id: str
+    title: str
+    impact: str
+    effort: str
+    description: str
+    risk_if_ignored: str
+
+
+class AutomationRecommendationsResponse(BaseModel):
+    recommendations: List[AutomationRecommendation]
+    challenges: List[str]

@@ -79,3 +79,24 @@ python orchestrator/nonstop_orchestrator.py --hours 3 --sleep-seconds 20 --run-a
 
 No web signup is required for these fallback modes.
 
+## Azure Integration Prep
+
+For company Azure rollout, keep these values in `.env` (do not commit):
+
+```bash
+REOS_AI_PROVIDER=azure_openai
+REOS_AZURE_OPENAI_ENDPOINT=
+REOS_AZURE_OPENAI_API_KEY=
+REOS_AZURE_OPENAI_CHAT_DEPLOYMENT=
+REOS_AZURE_OPENAI_EMBED_DEPLOYMENT=
+REOS_AZURE_STORAGE_ACCOUNT=
+REOS_AZURE_STORAGE_CONTAINER=
+REOS_AZURE_TENANT_ID=
+REOS_AZURE_CLIENT_ID=
+REOS_AZURE_AUDIENCE=
+REOS_AZURE_KEY_VAULT_URL=
+REOS_AUTOMATION_MODE=assistive
+```
+
+You can verify readiness from the dashboard or API endpoint: `GET /integrations/status`.
+

@@ -1,6 +1,7 @@
 # Author: Victor.I
 from pathlib import Path
 from typing import List
+import os
 
 from fastapi import Depends, FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
@@ -11,7 +12,7 @@ from . import models, schemas
 from .auth import create_default_admin, hash_password, issue_token, require_auth, verify_password
 from .database import Base, SessionLocal, engine, get_db
 from .ocr import extract_text
-from .rag import chunk_text, embed_text, generate_grounded_answer, retrieve_top_chunks, store_chunks
+from .rag import chunk_text, current_ai_provider, embed_text, generate_grounded_answer, retrieve_top_chunks, store_chunks
 
 Base.metadata.create_all(bind=engine)
 UPLOAD_DIR = Path("uploads")
@@ -256,3 +257,87 @@ def analytics_summary(db: Session = Depends(get_db), _: tuple = Depends(require_
         total_documents=total_documents,
         stage_distribution=stage_distribution,
     )
+
+
+@app.get("/integrations/status", response_model=schemas.IntegrationStatus)
+def integrations_status(_: tuple = Depends(require_auth)) -> schemas.IntegrationStatus:
+    azure_blob_configured = bool(
+        os.getenv("REOS_AZURE_STORAGE_ACCOUNT") and os.getenv("REOS_AZURE_STORAGE_CONTAINER")
+    )
+    azure_ad_configured = bool(
+        os.getenv("REOS_AZURE_TENANT_ID")
+        and os.getenv("REOS_AZURE_CLIENT_ID")
+        and os.getenv("REOS_AZURE_AUDIENCE")
+    )
+    azure_key_vault_configured = bool(os.getenv("REOS_AZURE_KEY_VAULT_URL"))
+    return schemas.IntegrationStatus(
+        ai_provider=current_ai_provider(),
+        azure_openai_configured=bool(
+            os.getenv("REOS_AZURE_OPENAI_ENDPOINT")
+            and os.getenv("REOS_AZURE_OPENAI_API_KEY")
+            and os.getenv("REOS_AZURE_OPENAI_CHAT_DEPLOYMENT")
+            and os.getenv("REOS_AZURE_OPENAI_EMBED_DEPLOYMENT")
+        ),
+        azure_blob_configured=azure_blob_configured,
+        azure_ad_configured=azure_ad_configured,
+        azure_key_vault_configured=azure_key_vault_configured,
+        automation_mode=os.getenv("REOS_AUTOMATION_MODE", "assistive"),
+    )
+
+
+@app.get("/automation/recommendations", response_model=schemas.AutomationRecommendationsResponse)
+def automation_recommendations(
+    db: Session = Depends(get_db), _: tuple = Depends(require_auth)
+) -> schemas.AutomationRecommendationsResponse:
+    total_deals = db.query(models.Deal).count()
+    total_documents = db.query(models.Document).count()
+    open_diligence = (
+        db.query(models.Deal)
+        .filter(models.Deal.stage.in_(["Screening", "Due Diligence", "Investment Committee"]))
+        .count()
+    )
+    recommendations = [
+        schemas.AutomationRecommendation(
+            id="auto-risk-triage",
+            title="Automate first-pass risk triage",
+            impact="high",
+            effort="medium",
+            description="Run document-level risk tags immediately after upload and route high-risk deals to managers.",
+            risk_if_ignored="Analysts spend time on low-risk files while critical issues wait in queue.",
+        ),
+        schemas.AutomationRecommendation(
+            id="auto-stage-gates",
+            title="Enforce stage gate checks automatically",
+            impact="high",
+            effort="low",
+            description="Prevent stage transitions unless required artifacts and notes are present.",
+            risk_if_ignored="Deals can progress without diligence evidence, creating audit and investment risk.",
+        ),
+        schemas.AutomationRecommendation(
+            id="auto-digest",
+            title="Send daily diligence digest",
+            impact="medium",
+            effort="low",
+            description="Generate summary by owner: new docs, unresolved risks, and stage blockers.",
+            risk_if_ignored="Leadership lacks consistent operational visibility and misses aging work.",
+        ),
+    ]
+    challenges = [
+        "Identity and RBAC mapping to existing Azure AD groups can cause permission drift if unmanaged.",
+        "Model governance is required when mixing local Ollama and Azure OpenAI to avoid inconsistent outputs.",
+        "Data residency and legal hold requirements may restrict where documents and embeddings can be stored.",
+        "Automation without confidence thresholds can flood teams with false positives and alert fatigue.",
+        "Legacy process dependencies in email/spreadsheets can block adoption unless workflow parity is planned.",
+    ]
+    if total_deals > 100 or total_documents > 300 or open_diligence > 40:
+        recommendations.append(
+            schemas.AutomationRecommendation(
+                id="auto-capacity-balancing",
+                title="Add workload balancing by analyst capacity",
+                impact="high",
+                effort="medium",
+                description="Auto-assign incoming diligence tasks by queue depth, role, and SLA due dates.",
+                risk_if_ignored="Backlog and turnaround time increase unevenly across teams.",
+            )
+        )
+    return schemas.AutomationRecommendationsResponse(recommendations=recommendations, challenges=challenges)

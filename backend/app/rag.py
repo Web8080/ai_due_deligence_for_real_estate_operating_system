@@ -15,6 +15,21 @@ OLLAMA_URL = "http://localhost:11434"
 EMBED_MODEL = "nomic-embed-text"
 GEN_MODEL = "llama3.1:8b"
 LOCAL_VECTOR_SIZE = 256
+AZURE_API_VERSION = os.getenv("REOS_AZURE_OPENAI_API_VERSION", "2024-02-15-preview")
+
+
+def current_ai_provider() -> str:
+    return os.getenv("REOS_AI_PROVIDER", "ollama").strip().lower()
+
+
+def _azure_openai_ready() -> bool:
+    required = [
+        os.getenv("REOS_AZURE_OPENAI_ENDPOINT"),
+        os.getenv("REOS_AZURE_OPENAI_API_KEY"),
+        os.getenv("REOS_AZURE_OPENAI_CHAT_DEPLOYMENT"),
+        os.getenv("REOS_AZURE_OPENAI_EMBED_DEPLOYMENT"),
+    ]
+    return all(required)
 
 
 def chunk_text(text: str, size: int = 700, overlap: int = 100) -> List[str]:
@@ -34,16 +49,16 @@ def chunk_text(text: str, size: int = 700, overlap: int = 100) -> List[str]:
 async def embed_text(text: str) -> List[float]:
     if os.getenv("REOS_AI_MODE", "").lower() == "local_fallback":
         return _local_embed(text)
-    async with httpx.AsyncClient(timeout=60) as client:
+    provider = current_ai_provider()
+    if provider == "azure_openai" and _azure_openai_ready():
         try:
-            response = await client.post(
-                f"{OLLAMA_URL}/api/embeddings",
-                json={"model": EMBED_MODEL, "prompt": text},
-            )
-            response.raise_for_status()
-            return response.json()["embedding"]
+            return await _embed_with_azure(text)
         except Exception:
-            return _local_embed(text)
+            pass
+    try:
+        return await _embed_with_ollama(text)
+    except Exception:
+        return _local_embed(text)
 
 
 def _cosine_similarity(a: List[float], b: List[float]) -> float:
@@ -89,16 +104,68 @@ async def generate_grounded_answer(question: str, chunks: List[Chunk]) -> str:
         "2) uncertainties\n"
         "3) citations copied verbatim from context tags\n"
     )
-    async with httpx.AsyncClient(timeout=90) as client:
+    provider = current_ai_provider()
+    if provider == "azure_openai" and _azure_openai_ready():
         try:
-            response = await client.post(
-                f"{OLLAMA_URL}/api/generate",
-                json={"model": GEN_MODEL, "prompt": prompt, "stream": False},
-            )
-            response.raise_for_status()
-            return response.json()["response"]
+            return await _generate_with_azure(prompt)
         except Exception:
-            return _local_generate_answer(question, chunks, citations)
+            pass
+    try:
+        return await _generate_with_ollama(prompt)
+    except Exception:
+        return _local_generate_answer(question, chunks, citations)
+
+
+async def _embed_with_ollama(text: str) -> List[float]:
+    async with httpx.AsyncClient(timeout=60) as client:
+        response = await client.post(
+            f"{OLLAMA_URL}/api/embeddings",
+            json={"model": EMBED_MODEL, "prompt": text},
+        )
+        response.raise_for_status()
+        return response.json()["embedding"]
+
+
+async def _generate_with_ollama(prompt: str) -> str:
+    async with httpx.AsyncClient(timeout=90) as client:
+        response = await client.post(
+            f"{OLLAMA_URL}/api/generate",
+            json={"model": GEN_MODEL, "prompt": prompt, "stream": False},
+        )
+        response.raise_for_status()
+        return response.json()["response"]
+
+
+async def _embed_with_azure(text: str) -> List[float]:
+    endpoint = os.getenv("REOS_AZURE_OPENAI_ENDPOINT", "").rstrip("/")
+    api_key = os.getenv("REOS_AZURE_OPENAI_API_KEY", "")
+    embed_deployment = os.getenv("REOS_AZURE_OPENAI_EMBED_DEPLOYMENT", "")
+    url = f"{endpoint}/openai/deployments/{embed_deployment}/embeddings"
+    params = {"api-version": AZURE_API_VERSION}
+    headers = {"api-key": api_key, "Content-Type": "application/json"}
+    async with httpx.AsyncClient(timeout=60) as client:
+        response = await client.post(url, params=params, headers=headers, json={"input": text})
+        response.raise_for_status()
+        payload = response.json()
+        return payload["data"][0]["embedding"]
+
+
+async def _generate_with_azure(prompt: str) -> str:
+    endpoint = os.getenv("REOS_AZURE_OPENAI_ENDPOINT", "").rstrip("/")
+    api_key = os.getenv("REOS_AZURE_OPENAI_API_KEY", "")
+    chat_deployment = os.getenv("REOS_AZURE_OPENAI_CHAT_DEPLOYMENT", "")
+    url = f"{endpoint}/openai/deployments/{chat_deployment}/chat/completions"
+    params = {"api-version": AZURE_API_VERSION}
+    headers = {"api-key": api_key, "Content-Type": "application/json"}
+    body = {
+        "messages": [{"role": "user", "content": prompt}],
+        "temperature": 0.2,
+    }
+    async with httpx.AsyncClient(timeout=90) as client:
+        response = await client.post(url, params=params, headers=headers, json=body)
+        response.raise_for_status()
+        payload = response.json()
+        return payload["choices"][0]["message"]["content"]
 
 
 def _local_embed(text: str) -> List[float]:

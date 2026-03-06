@@ -20,6 +20,7 @@ This repository includes a local-first implementation (`FastAPI + Next.js + SQLi
 - [Documentation](#documentation)
 - [Security Notes](#security-notes)
 - [Roadmap](#roadmap)
+- [Azure Integration](#azure-integration)
 
 ## Overview
 
@@ -143,6 +144,15 @@ python scripts/smoke_test.py
 - `docs/risk-and-tradeoffs.md`
 - `docs/implementation-roadmap.md`
 - `docs/interview-preparation-guide.md`
+- `docs/azure-integration-and-automation.md`
+
+## Azure Integration
+
+The backend now includes provider-ready integration points for enterprise Azure rollout:
+
+- `REOS_AI_PROVIDER=azure_openai` to route embeddings/chat calls to Azure OpenAI deployments
+- `/integrations/status` endpoint to verify Azure OpenAI, Blob, Entra ID, and Key Vault readiness
+- `/automation/recommendations` endpoint to prioritize workflow automation with risk-aware guidance
 
 ## Security Notes
 

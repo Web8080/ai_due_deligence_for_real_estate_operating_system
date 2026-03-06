@@ -23,6 +23,8 @@ export default function AppPage() {
   const [question, setQuestion] = useState("What are key diligence risks?");
   const [answer, setAnswer] = useState("");
   const [analytics, setAnalytics] = useState({ total_deals: 0, total_contacts: 0, total_documents: 0, stage_distribution: {} });
+  const [integrationStatus, setIntegrationStatus] = useState(null);
+  const [automation, setAutomation] = useState({ recommendations: [], challenges: [] });
   const [documents, setDocuments] = useState([]);
   const [queryHistory, setQueryHistory] = useState([]);
   const [notes, setNotes] = useState([]);
@@ -77,6 +79,10 @@ export default function AppPage() {
       setContacts(contactPayload);
       const summaryRes = await fetch(`${API}/analytics/summary`, { headers: authHeader });
       if (summaryRes.ok) setAnalytics(await summaryRes.json());
+      const statusRes = await fetch(`${API}/integrations/status`, { headers: authHeader });
+      if (statusRes.ok) setIntegrationStatus(await statusRes.json());
+      const automationRes = await fetch(`${API}/automation/recommendations`, { headers: authHeader });
+      if (automationRes.ok) setAutomation(await automationRes.json());
       if (dealPayload.length && !selectedDealId) {
         setSelectedDealId(String(dealPayload[0].id));
       }
@@ -421,6 +427,38 @@ export default function AppPage() {
 
       <section className="grid">
         <div className="card">
+          <h2>Azure Integration Readiness</h2>
+          {!integrationStatus ? (
+            <p>Loading integration status...</p>
+          ) : (
+            <ul className="list">
+              <li>AI provider: {integrationStatus.ai_provider}</li>
+              <li>Azure OpenAI configured: {integrationStatus.azure_openai_configured ? "Yes" : "No"}</li>
+              <li>Azure Blob configured: {integrationStatus.azure_blob_configured ? "Yes" : "No"}</li>
+              <li>Azure AD configured: {integrationStatus.azure_ad_configured ? "Yes" : "No"}</li>
+              <li>Key Vault configured: {integrationStatus.azure_key_vault_configured ? "Yes" : "No"}</li>
+              <li>Automation mode: {integrationStatus.automation_mode}</li>
+            </ul>
+          )}
+        </div>
+        <div className="card">
+          <h2>Automation Priorities</h2>
+          <ul className="list">
+            {automation.recommendations.length === 0 ? (
+              <li>No recommendations available.</li>
+            ) : (
+              automation.recommendations.map((item) => (
+                <li key={item.id}>
+                  <strong>{item.title}</strong> [{item.impact}/{item.effort}]
+                </li>
+              ))
+            )}
+          </ul>
+        </div>
+      </section>
+
+      <section className="grid">
+        <div className="card">
           <h2>Create Deal</h2>
           <form onSubmit={createDeal} className="stack-form">
             <input name="name" placeholder="Deal name" required />
@@ -551,6 +589,17 @@ export default function AppPage() {
                 <strong>[{a.kind.toUpperCase()}]</strong> {a.text}
               </li>
             ))
+          )}
+        </ul>
+      </section>
+
+      <section className="card wide-card">
+        <h2>Operational Challenges To Plan For</h2>
+        <ul className="list">
+          {automation.challenges.length === 0 ? (
+            <li>Challenge profile unavailable.</li>
+          ) : (
+            automation.challenges.map((challenge, idx) => <li key={`${idx}-${challenge.slice(0, 12)}`}>{challenge}</li>)
           )}
         </ul>
       </section>
