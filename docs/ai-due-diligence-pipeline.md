@@ -2,6 +2,16 @@ Author: Victor.I
 
 # AI Due Diligence Pipeline
 
+## Table of Contents
+
+- [Pipeline Stages](#pipeline-stages)
+- [Pipeline Flowchart](#pipeline-flowchart)
+- [Retrieval and Grounding Rules](#retrieval-and-grounding-rules)
+- [Anti-Hallucination Controls](#anti-hallucination-controls)
+- [Evaluation Plan](#evaluation-plan)
+- [Fallback Paths](#fallback-paths)
+- [Governance and Audit](#governance-and-audit)
+
 ## Pipeline Stages
 
 1. Capture: secure upload and source registration
@@ -13,6 +23,23 @@ Author: Victor.I
 7. Reranking: precision refinement for evidence quality
 8. Generation: constrained response with citations and confidence
 9. Review: human approval gate for high-risk outputs
+
+## Pipeline Flowchart
+
+```mermaid
+flowchart TD
+  U[Upload Document] --> X[Extraction/OCR]
+  X --> N[Normalization]
+  N --> C[Chunking]
+  C --> E[Embedding Generation]
+  E --> S[Chunk and Vector Storage]
+  Q[User Question] --> QE[Question Embedding]
+  QE --> R[Hybrid Retrieval]
+  R --> RR[Rerank Top Context]
+  RR --> G[Grounded Generation]
+  G --> V[Confidence + Citation Packaging]
+  V --> A[Analyst Response]
+```
 
 ## Retrieval and Grounding Rules
 

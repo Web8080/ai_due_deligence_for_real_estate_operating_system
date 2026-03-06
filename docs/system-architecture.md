@@ -2,13 +2,49 @@ Author: Victor.I
 
 # System Architecture
 
+## Table of Contents
+
+- [Context](#context)
+- [High-Level Topology](#high-level-topology)
+- [System Flowchart](#system-flowchart)
+- [Service Boundaries](#service-boundaries)
+- [Data Ownership](#data-ownership)
+- [Key Read/Write Paths](#key-readwrite-paths)
+- [Operational Characteristics](#operational-characteristics)
+- [Observability Baseline](#observability-baseline)
+
+## Context
+
+This architecture is optimized for an internal operating platform with a local-first runtime and a clear path to production hardening.
+
 ## High-Level Topology
 
 - Frontend: Next.js application for deal operations, CRM, and AI workflows
 - API/BFF: FastAPI gateway for auth, aggregation, and policy enforcement
 - Core services: deal workflow, CRM, documents, AI analysis, notifications
-- Data plane: PostgreSQL (system of record), Redis (cache/queue), object storage
-- Async processing: Celery workers for OCR, extraction, embeddings, analysis jobs
+- Data plane (current local profile): SQLite + local file storage
+- Async processing (current profile): synchronous orchestration in API, with orchestrator-driven validation
+
+## System Flowchart
+
+```mermaid
+flowchart LR
+  U[Internal User] --> FE[Frontend App]
+  FE --> API[FastAPI API/BFF]
+  API --> AUTH[Auth and RBAC]
+  API --> DEALS[Deal Workflow]
+  API --> CRM[Contact CRM]
+  API --> DOCS[Document Service]
+  DOCS --> OCR[Extraction/OCR]
+  OCR --> CH[Chunking]
+  CH --> EMB[Embeddings]
+  EMB --> IDX[(Chunk/Vector Store)]
+  API --> AI[AI Query Orchestrator]
+  AI --> IDX
+  AI --> LLM[Ollama]
+  API --> DB[(SQLite)]
+  API --> FS[(Local File Storage)]
+```
 
 ## Service Boundaries
 
@@ -21,10 +57,10 @@ Author: Victor.I
 
 ## Data Ownership
 
-- PostgreSQL owns transactional truth (deals, permissions, states, audit logs)
-- Object storage owns raw and versioned document binaries
-- Vector index owns semantic retrieval state, keyed by canonical document/chunk IDs
-- Redis owns ephemeral cache and queue state only
+- SQLite owns transactional truth (deals, permissions, states, audit logs)
+- Local file storage owns raw and versioned document binaries
+- Chunk store owns semantic retrieval state, keyed by canonical document/chunk IDs
+- In-memory runtime owns ephemeral token/session state
 
 ## Key Read/Write Paths
 

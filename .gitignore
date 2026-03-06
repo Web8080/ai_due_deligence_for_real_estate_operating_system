@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+venv/
+
+# Node
+node_modules/
+frontend/.next/
+
+# Runtime
+.env
+*.log
+.DS_Store
+reos.db
+uploads/
+test-results.json
+test-automation.js
+backend/reos.db
+backend/uploads/
+orchestrator/logs/

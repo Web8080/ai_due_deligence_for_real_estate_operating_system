@@ -4,6 +4,11 @@ Author: Victor.I
 
 This folder contains the architecture and execution documentation for a prototype **Real Estate Operating System (REOS)** with AI-powered due diligence.
 
+## Table of Contents
+
+- [Documents](#documents)
+- [Scope](#scope)
+
 ## Documents
 
 - `requirement.md` - Product, system, security, and operational requirements.
