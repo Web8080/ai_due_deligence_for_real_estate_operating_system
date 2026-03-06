@@ -8,10 +8,10 @@ export default function LandingPage() {
         <div className="container header-inner">
           <div className="brand">REOS</div>
           <nav className="nav-links">
-            <a href="#product">Product</a>
-            <a href="#ai">AI Engine</a>
-            <a href="#workflow">Workflow</a>
-            <a href="#platform">Platform</a>
+            <Link href="/product">Product</Link>
+            <Link href="/ai-engine">AI Engine</Link>
+            <Link href="/workflow">Workflow</Link>
+            <Link href="/platform">Platform</Link>
           </nav>
           <div className="header-actions">
             <Link href="/login" className="button-link button-secondary">
@@ -143,7 +143,8 @@ export default function LandingPage() {
           <div className="footer-column">
             <h4>Platform</h4>
             <div className="footer-links">
-              <Link href="/app">Workspace</Link>
+              <Link href="/platform">Platform</Link>
+              <Link href="/workspace">Workspace</Link>
               <Link href="/login">Sign in</Link>
               <Link href="/signup">Create user</Link>
             </div>
@@ -151,9 +152,10 @@ export default function LandingPage() {
           <div className="footer-column">
             <h4>Operations</h4>
             <div className="footer-links">
-              <a href="#workflow">Workflow stages</a>
-              <a href="#ai">AI controls</a>
-              <a href="#platform">Operating modes</a>
+              <Link href="/operations">Operations</Link>
+              <Link href="/workflow-stages">Workflow stages</Link>
+              <Link href="/ai-controls">AI controls</Link>
+              <Link href="/operating-modes">Operating modes</Link>
             </div>
           </div>
         </div>
