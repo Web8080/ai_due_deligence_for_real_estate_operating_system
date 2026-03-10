@@ -1,143 +1,209 @@
-Author: Victor.I
+# REOS – Real Estate Operating System
 
-# REOS Internal Platform
+**Author:** Victor.I
 
-REOS is an internal real estate operating platform for deal execution, document intelligence, and AI-assisted due diligence.  
-This repository includes a local-first implementation (`FastAPI + Next.js + SQLite + Ollama`) and architecture documentation for phased hardening.
+Internal real estate operating platform for deal execution, document intelligence, and AI-assisted due diligence. Local-first stack: FastAPI, Next.js, SQLite, Ollama.
+
+![REOS Dashboard](docs/screenshots/dashboard-overview.png)
+
+---
 
 ## Table of Contents
 
+- [Business Value](#business-value)
 - [Overview](#overview)
-- [Current Capabilities](#current-capabilities)
+- [Features](#features)
 - [Architecture](#architecture)
+- [User & Data Flow](#user--data-flow)
 - [AI Pipeline](#ai-pipeline)
 - [Tech Stack](#tech-stack)
 - [Project Structure](#project-structure)
 - [Quick Start](#quick-start)
 - [Default Users](#default-users)
-- [Smoke Testing](#smoke-testing)
-- [Non-Stop Orchestrator](#non-stop-orchestrator)
+- [Testing](#testing)
 - [Documentation](#documentation)
-- [Security Notes](#security-notes)
-- [Roadmap](#roadmap)
+- [Deployment](#deployment)
 - [Azure Integration](#azure-integration)
+- [Security](#security)
+- [Roadmap](#roadmap)
+
+---
+
+## Business Value
+
+| Problem | How REOS Helps |
+|--------|-----------------|
+| Fragmented deal tracking | Single workspace: pipeline, committee queue, diligence, and watchlists in one place |
+| Document silos and manual review | Ingest, extract, chunk, and query documents with RAG and citations |
+| Ad hoc investor spreadsheets | CRM, pipeline, onboarding, and relationship memory in one system |
+| No traceability for decisions | Audit events, AI run history, integration posture, and controls in one control plane |
+| Slow operator workflows | Task-oriented AI (Ollama) and contextual chat on every page |
+
+**Outcomes:** Decision compression for acquisitions, diligence, investor growth, and governance; one operating layer that scales from local use to Azure-backed enterprise.
+
+---
 
 ## Overview
 
-The platform is designed for internal teams that need one system to:
+REOS gives internal teams one system to:
 
-- manage deal workflow
-- organize investor and broker contacts
-- ingest and analyze documents
-- query grounded AI outputs with citations
+- **Manage deal workflow** from intake to committee and closing
+- **Organize investor and broker contacts** with pipeline and onboarding
+- **Ingest and analyze documents** with extraction and RAG
+- **Query grounded AI** with answers and citations
 
-## Current Capabilities
+---
 
-- Landing, login, signup, and authenticated dashboard
-- Deal and CRM contact management
-- Document upload and extraction
-- RAG-based AI query endpoint with citations
-- Role-based user identities (`admin`, `manager`, `analyst`)
-- Continuous local build/smoke orchestrator
+## Features
+
+- **Landing, login, and authenticated dashboard** – KPIs, market overview, pipeline, tasks, top agents, activity feed, performance tracking
+- **Deal and CRM** – Deals hub, deal workspace, contacts and companies
+- **Document intelligence** – Upload, extraction, and RAG-based query with citations
+- **Ollama AI** – Contextual chat panel on every page; workspace-aware copilot
+- **Role-based access** – `admin`, `manager`, `analyst` with governance and admin surfaces
+- **Local and Azure-ready** – SQLite + Ollama locally; optional Azure OpenAI, Blob, Service Bus, AI Search
+
+---
 
 ## Architecture
 
-Local development profile:
+### Local development
 
 ```mermaid
 flowchart LR
-  U[Internal User] --> FE[Next.js Frontend]
-  FE --> API[FastAPI API Layer]
+  U[User] --> FE[Next.js]
+  FE --> API[FastAPI]
   API --> DB[(SQLite)]
-  API --> FS[(Local Upload Storage)]
-  API --> OCR[Document Extraction/OCR]
-  OCR --> CH[Chunking]
-  CH --> EMB[Embeddings]
-  EMB --> IDX[(Chunk Store + Vector Similarity)]
-  API --> LLM[Ollama LLM]
+  API --> FS[(Uploads)]
+  API --> OCR[OCR]
+  OCR --> CH[Chunk]
+  CH --> EMB[Embed]
+  EMB --> IDX[(Chunk Store)]
+  API --> LLM[Ollama]
   IDX --> LLM
   LLM --> API
   API --> FE
 ```
 
-Azure enterprise profile:
+### Azure enterprise
 
 ```mermaid
 flowchart LR
-  U[Users and Analysts] --> FD[Azure Front Door]
-  FD --> AGW[Azure App Gateway]
-  AGW --> APIM[Azure API Management]
-  APIM --> DS[Deal Service App Service]
-  APIM --> CRM[CRM Service App Service]
-  APIM --> DOCS[Document Service App Service]
-  DOCS --> BLOB[Azure Blob Storage]
-  DOCS --> BUS[Azure Service Bus]
-  BUS --> FN[Azure Functions Processing]
-  FN --> EMB[Embedding Generation]
-  EMB --> AIS[Azure AI Search]
+  U[Users] --> FD[Front Door]
+  FD --> AGW[App Gateway]
+  AGW --> APIM[API Mgmt]
+  APIM --> DS[Deal Svc]
+  APIM --> CRM[CRM Svc]
+  APIM --> DOCS[Doc Svc]
+  DOCS --> BLOB[Blob]
+  DOCS --> BUS[Service Bus]
+  BUS --> FN[Functions]
+  FN --> EMB[Embed]
+  EMB --> AIS[AI Search]
   AIS --> AOAI[Azure OpenAI]
-  AOAI --> INS[AI Analysis Layer]
+  AOAI --> INS[Analysis]
 ```
+
+---
+
+## User & Data Flow
+
+```mermaid
+flowchart TD
+  A[Landing] --> B[Sign in]
+  B --> C[Dashboard]
+  C --> D{Action}
+  D --> E[Deals / Pipeline]
+  D --> F[Leads / CRM]
+  D --> G[Documents / RAG]
+  D --> H[Ollama Chat]
+  E --> I[Deal Workspace]
+  F --> J[Contacts / Investors]
+  G --> K[Upload / Query]
+  H --> L[Contextual Answer]
+  I --> H
+  J --> H
+  K --> L
+```
+
+---
 
 ## AI Pipeline
 
-```mermaid
-flowchart TD
-  A[Upload Document] --> B[Extract Text/OCR]
-  B --> C[Normalize + Chunk]
-  C --> D[Embed Chunks]
-  D --> E[Persist Chunks]
-  F[User Question] --> G[Embed Query]
-  G --> H[Retrieve Top Chunks]
-  H --> I[Generate Grounded Answer]
-  I --> J[Return Answer + Citations]
-```
-
-Azure async pipeline path:
+**Local (Ollama):**
 
 ```mermaid
 flowchart TD
-  A[Document Upload] --> B[Azure Blob Storage]
-  B --> C[Service Bus Queue Event]
-  C --> D[Azure Functions Parser]
-  D --> E[Chunk and Embed]
-  E --> F[Azure AI Search Index]
-  Q[Question] --> G[Retrieve Top Chunks]
-  G --> H[Azure OpenAI Answer Generation]
-  H --> I[Analyst Review and Workflow]
+  A[Upload] --> B[Extract/OCR]
+  B --> C[Chunk]
+  C --> D[Embed]
+  D --> E[Store]
+  F[Question] --> G[Embed Query]
+  G --> H[Retrieve]
+  H --> I[Grounded Answer]
+  I --> J[Answer + Citations]
 ```
+
+**Azure async:**
+
+```mermaid
+flowchart TD
+  A[Upload] --> B[Blob]
+  B --> C[Service Bus]
+  C --> D[Functions]
+  D --> E[Chunk + Embed]
+  E --> F[AI Search]
+  Q[Question] --> G[Retrieve]
+  G --> H[Azure OpenAI]
+  H --> I[Review]
+```
+
+---
 
 ## Tech Stack
 
-- Frontend: Next.js (App Router)
-- Backend: FastAPI + SQLAlchemy
-- Database: SQLite (local)
-- AI Runtime: Ollama
-- OCR: Tesseract via `pytesseract`
-- Test: Pytest + API smoke scripts
+| Layer | Technology |
+|-------|------------|
+| Frontend | Next.js (App Router), React |
+| Backend | FastAPI, SQLAlchemy |
+| Database | SQLite (local) |
+| AI | Ollama (local), optional Azure OpenAI |
+| OCR | Tesseract via `pytesseract` |
+| Tests | Pytest, smoke scripts |
+
+---
 
 ## Project Structure
 
-- `frontend/` - landing, auth pages, internal dashboard UI
-- `backend/` - API, auth, data models, document + AI pipeline
-- `orchestrator/` - autonomous validation loop
-- `scripts/` - smoke test utilities
-- `samples/` - upload-ready test documents
-- `docs/` - requirements, architecture, pipeline, roadmap
+```
+.
+├── frontend/          # Next.js app (landing, auth, dashboard, Ollama chat)
+├── backend/           # FastAPI API, auth, models, document + AI pipeline
+├── orchestrator/      # Validation loop
+├── scripts/           # Smoke test utilities
+├── samples/           # Sample documents
+├── docs/              # Requirements, architecture, roadmap
+│   └── screenshots/   # UI screenshots
+└── infra/azure/       # Bicep and deployment notes
+```
+
+---
 
 ## Quick Start
 
-1) Backend
+**1. Backend**
 
 ```bash
 cd backend
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
+# Optional: copy backend/.env.example to .env and set:
+# REOS_ENABLE_LOCAL_BOOTSTRAP=true REOS_LOCAL_LOGIN_ENABLED=true REOS_SESSION_SECRET=your-secret
 uvicorn app.main:app --host 0.0.0.0 --port 8000
 ```
 
-2) Frontend
+**2. Frontend**
 
 ```bash
 cd frontend
@@ -145,80 +211,87 @@ npm install
 npm run dev
 ```
 
-3) Open
+**3. Open**
 
-- Frontend: `http://localhost:3000`
-- Backend health: `http://localhost:8000/health`
+- **App:** [http://localhost:30001](http://localhost:30001)
+- **API health:** [http://localhost:8000/health](http://localhost:8000/health)
+
+---
 
 ## Default Users
 
-- `admin / admin123`
-- `analyst1 / analyst123`
-- `manager1 / manager123`
+| Username | Password | Role |
+|----------|----------|------|
+| admin | admin123 | admin |
+| analyst1 | analyst123 | analyst |
+| manager1 | manager123 | manager |
 
-You can create additional users on `/signup`.
+Default users exist only when the backend is run with `REOS_ENABLE_LOCAL_BOOTSTRAP=true` and `REOS_LOCAL_LOGIN_ENABLED=true` (see `backend/.env.example`).
 
-## Smoke Testing
+---
+
+## Testing
 
 ```bash
+# Backend tests
 PYTHONPATH=. .venv/bin/python -m pytest backend/tests/test_smoke.py -q
+
+# Smoke script
 python scripts/smoke_test.py
 ```
 
-## Non-Stop Orchestrator
+**Non-stop orchestrator:**
 
 ```bash
 .venv/bin/python orchestrator/nonstop_orchestrator.py --hours 6 --sleep-seconds 20
 ```
 
+---
+
 ## Documentation
 
-- `docs/requirement.md`
-- `docs/system-architecture.md`
-- `docs/ai-due-diligence-pipeline.md`
-- `docs/risk-and-tradeoffs.md`
-- `docs/implementation-roadmap.md`
-- `docs/interview-preparation-guide.md`
-- `docs/azure-integration-and-automation.md`
+- [Requirements](docs/requirement.md)
+- [System architecture](docs/system-architecture.md)
+- [AI due diligence pipeline](docs/ai-due-diligence-pipeline.md)
+- [Risk and tradeoffs](docs/risk-and-tradeoffs.md)
+- [Implementation roadmap](docs/implementation-roadmap.md)
+- [Interview preparation](docs/interview-preparation-guide.md)
+- [Azure integration](docs/azure-integration-and-automation.md)
 
-## Deployment Scaffolding
+---
 
-- `.github/workflows/ci.yml` - backend test and frontend build validation workflow.
-- `.github/workflows/azure-deploy-skeleton.yml` - staged Azure deployment placeholder pipeline.
-- `infra/azure/main.bicep` - starter Azure IaC template for App Service, Blob, and Service Bus.
-- `infra/azure/README.md` - deployment assumptions, required secrets, and rollout caveats.
+## Deployment
+
+- **CI:** `.github/workflows/ci.yml` – backend tests and frontend build
+- **Azure skeleton:** `.github/workflows/azure-deploy-skeleton.yml`
+- **IaC:** `infra/azure/main.bicep` – App Service, Blob, Service Bus
+- **Deploy notes:** `infra/azure/README.md`
+
+---
 
 ## Azure Integration
 
-The backend now includes provider-ready integration points for enterprise Azure rollout:
+- `REOS_AI_PROVIDER=azure_openai` for Azure OpenAI embeddings/chat
+- `/integrations/status` – Azure OpenAI, Blob, Entra ID, Key Vault
+- `/architecture/azure` – architecture map for UI/docs
+- `/integrations/mode` – local vs Azure runtime
+- `/automation/recommendations` – workflow automation guidance
 
-- `REOS_AI_PROVIDER=azure_openai` to route embeddings/chat calls to Azure OpenAI deployments
-- `/integrations/status` endpoint to verify Azure OpenAI, Blob, Entra ID, and Key Vault readiness
-- `/architecture/azure` endpoint to expose a canonical Azure architecture map for UI and docs consistency
-- `/integrations/mode` endpoint to switch runtime posture between local and Azure modes (config-level only)
-- `/automation/recommendations` endpoint to prioritize workflow automation with risk-aware guidance
+**Env vars (examples):** `REOS_RUNTIME_MODE`, `REOS_AZURE_FRONT_DOOR_HOST`, `REOS_AZURE_APP_GATEWAY_HOST`, `REOS_AZURE_APIM_NAME`, `REOS_AZURE_SERVICE_BUS_*`, `REOS_AZURE_AI_SEARCH_*`, `REOS_AZURE_FUNCTIONS_APP`.
 
-Additional Azure integration environment variables:
+---
 
-- `REOS_RUNTIME_MODE` (`local` or `azure`)
-- `REOS_AZURE_FRONT_DOOR_HOST`
-- `REOS_AZURE_APP_GATEWAY_HOST`
-- `REOS_AZURE_APIM_NAME`
-- `REOS_AZURE_SERVICE_BUS_NAMESPACE`
-- `REOS_AZURE_SERVICE_BUS_QUEUE`
-- `REOS_AZURE_AI_SEARCH_ENDPOINT`
-- `REOS_AZURE_AI_SEARCH_INDEX`
-- `REOS_AZURE_FUNCTIONS_APP`
+## Security
 
-## Security Notes
+- Default credentials are for **local development only**; do not use in shared or production environments.
+- Use managed secrets and stronger auth/session controls before production.
+- Restrict CORS and enforce tenant isolation in production.
 
-- For local development only; do not use default credentials in shared environments.
-- Move to managed secret storage and stronger auth/session controls before production use.
-- Restrict CORS origins and enforce tenant isolation in production topology.
+---
 
 ## Roadmap
 
-- Add pagination and filtering across dashboard entities
-- Introduce stronger auth/session lifecycle and permission boundaries
-- Add persistent vector index and richer analytics observability
-- Harden deployment profile for production operations
+- Pagination and filtering across dashboard entities
+- Stronger auth/session lifecycle and permission boundaries
+- Persistent vector index and richer analytics
+- Production-hardened deployment profile
