@@ -42,6 +42,8 @@ The platform is designed for internal teams that need one system to:
 
 ## Architecture
 
+Local development profile:
+
 ```mermaid
 flowchart LR
   U[Internal User] --> FE[Next.js Frontend]
@@ -58,6 +60,25 @@ flowchart LR
   API --> FE
 ```
 
+Azure enterprise profile:
+
+```mermaid
+flowchart LR
+  U[Users and Analysts] --> FD[Azure Front Door]
+  FD --> AGW[Azure App Gateway]
+  AGW --> APIM[Azure API Management]
+  APIM --> DS[Deal Service App Service]
+  APIM --> CRM[CRM Service App Service]
+  APIM --> DOCS[Document Service App Service]
+  DOCS --> BLOB[Azure Blob Storage]
+  DOCS --> BUS[Azure Service Bus]
+  BUS --> FN[Azure Functions Processing]
+  FN --> EMB[Embedding Generation]
+  EMB --> AIS[Azure AI Search]
+  AIS --> AOAI[Azure OpenAI]
+  AOAI --> INS[AI Analysis Layer]
+```
+
 ## AI Pipeline
 
 ```mermaid
@@ -70,6 +91,20 @@ flowchart TD
   G --> H[Retrieve Top Chunks]
   H --> I[Generate Grounded Answer]
   I --> J[Return Answer + Citations]
+```
+
+Azure async pipeline path:
+
+```mermaid
+flowchart TD
+  A[Document Upload] --> B[Azure Blob Storage]
+  B --> C[Service Bus Queue Event]
+  C --> D[Azure Functions Parser]
+  D --> E[Chunk and Embed]
+  E --> F[Azure AI Search Index]
+  Q[Question] --> G[Retrieve Top Chunks]
+  G --> H[Azure OpenAI Answer Generation]
+  H --> I[Analyst Review and Workflow]
 ```
 
 ## Tech Stack
@@ -146,13 +181,34 @@ python scripts/smoke_test.py
 - `docs/interview-preparation-guide.md`
 - `docs/azure-integration-and-automation.md`
 
+## Deployment Scaffolding
+
+- `.github/workflows/ci.yml` - backend test and frontend build validation workflow.
+- `.github/workflows/azure-deploy-skeleton.yml` - staged Azure deployment placeholder pipeline.
+- `infra/azure/main.bicep` - starter Azure IaC template for App Service, Blob, and Service Bus.
+- `infra/azure/README.md` - deployment assumptions, required secrets, and rollout caveats.
+
 ## Azure Integration
 
 The backend now includes provider-ready integration points for enterprise Azure rollout:
 
 - `REOS_AI_PROVIDER=azure_openai` to route embeddings/chat calls to Azure OpenAI deployments
 - `/integrations/status` endpoint to verify Azure OpenAI, Blob, Entra ID, and Key Vault readiness
+- `/architecture/azure` endpoint to expose a canonical Azure architecture map for UI and docs consistency
+- `/integrations/mode` endpoint to switch runtime posture between local and Azure modes (config-level only)
 - `/automation/recommendations` endpoint to prioritize workflow automation with risk-aware guidance
+
+Additional Azure integration environment variables:
+
+- `REOS_RUNTIME_MODE` (`local` or `azure`)
+- `REOS_AZURE_FRONT_DOOR_HOST`
+- `REOS_AZURE_APP_GATEWAY_HOST`
+- `REOS_AZURE_APIM_NAME`
+- `REOS_AZURE_SERVICE_BUS_NAMESPACE`
+- `REOS_AZURE_SERVICE_BUS_QUEUE`
+- `REOS_AZURE_AI_SEARCH_ENDPOINT`
+- `REOS_AZURE_AI_SEARCH_INDEX`
+- `REOS_AZURE_FUNCTIONS_APP`
 
 ## Security Notes
 

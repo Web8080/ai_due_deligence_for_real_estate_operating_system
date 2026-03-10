@@ -41,6 +41,21 @@ flowchart TD
   V --> A[Analyst Response]
 ```
 
+Azure enterprise pipeline variant:
+
+```mermaid
+flowchart TD
+  upload[Upload Document] --> blob[Azure Blob Storage]
+  blob --> queue[Azure Service Bus Queue]
+  queue --> parseFn[Azure Functions Parsing Worker]
+  parseFn --> chunk[Chunking and Metadata Extraction]
+  chunk --> embedFn[Embedding Generation Worker]
+  embedFn --> search[Azure AI Search Vector Index]
+  userQ[User Question] --> retrieve[Hybrid Retrieval and Rerank]
+  retrieve --> aoai[Azure OpenAI Grounded Generation]
+  aoai --> response[Answer with Citations]
+```
+
 ## Retrieval and Grounding Rules
 
 - generate only from retrieved evidence
@@ -74,6 +89,16 @@ Cost:
 - LLM provider outage -> secondary provider/model adapter
 - reranker outage -> retrieval-only mode with stricter thresholds
 - timeout -> partial evidence summary instead of hard failure
+- queue backlog -> autoscale workers and prioritize by due date/SLA
+- service bus poison messages -> dead-letter queue triage with replay controls
+
+## Queue Safety and Replay Strategy
+
+- all ingestion jobs should include an idempotency key (`deal_id`, `document_id`, `pipeline_version`)
+- document workers should upsert chunk embeddings using deterministic chunk IDs
+- DLQ records should preserve raw payload, error category, and retry count
+- replay jobs must run against a scoped batch to avoid duplicate embeddings
+- processing status should be persisted to support audit and operator visibility
 
 ## Governance and Audit
 

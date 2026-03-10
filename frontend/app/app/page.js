@@ -4,11 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
-function getApiBase() {
-  if (process.env.NEXT_PUBLIC_API_BASE_URL) return process.env.NEXT_PUBLIC_API_BASE_URL;
-  if (typeof window !== "undefined") return `${window.location.protocol}//${window.location.hostname}:8000`;
-  return "http://localhost:8000";
-}
+import AppShell from "../components/app-shell";
+import { authHeaders, clearStoredAuth, getApiBase, getStoredAuth } from "../lib/reos-client";
 
 export default function AppPage() {
   const API = getApiBase();
@@ -16,132 +13,99 @@ export default function AppPage() {
   const [token, setToken] = useState("");
   const [username, setUsername] = useState("");
   const [role, setRole] = useState("");
-  const [deals, setDeals] = useState([]);
-  const [contacts, setContacts] = useState([]);
+  const [bootstrap, setBootstrap] = useState(null);
   const [message, setMessage] = useState("");
-  const [selectedDealId, setSelectedDealId] = useState("");
-  const [question, setQuestion] = useState("What are key diligence risks?");
-  const [answer, setAnswer] = useState("");
-  const [analytics, setAnalytics] = useState({ total_deals: 0, total_contacts: 0, total_documents: 0, stage_distribution: {} });
+  const [busy, setBusy] = useState("");
+  const [newDealName, setNewDealName] = useState("");
+  const [newDealCity, setNewDealCity] = useState("");
+  const [newDealAssetType, setNewDealAssetType] = useState("multifamily");
+  const [newContactName, setNewContactName] = useState("");
+  const [newContactEmail, setNewContactEmail] = useState("");
+  const [newContactCompany, setNewContactCompany] = useState("");
+  const [newContactType, setNewContactType] = useState("investor");
   const [integrationStatus, setIntegrationStatus] = useState(null);
   const [automation, setAutomation] = useState({ recommendations: [], challenges: [] });
-  const [documents, setDocuments] = useState([]);
-  const [queryHistory, setQueryHistory] = useState([]);
-  const [notes, setNotes] = useState([]);
-  const [noteText, setNoteText] = useState("");
-  const [targetStage, setTargetStage] = useState("Due Diligence");
-  const [filterStage, setFilterStage] = useState("All");
-  const [searchTerm, setSearchTerm] = useState("");
-  const [busy, setBusy] = useState("");
-  const stageOptions = ["Lead", "Screening", "Due Diligence", "Investment Committee", "Approved", "Rejected"];
 
-  const headers = useMemo(() => {
-    if (!token) return {};
-    return { Authorization: `Bearer ${token}`, "Content-Type": "application/json" };
-  }, [token]);
+  const headers = useMemo(() => authHeaders(token), [token]);
 
   useEffect(() => {
-    const raw = localStorage.getItem("reos_auth");
-    if (!raw) {
+    const auth = getStoredAuth();
+    if (!auth?.token) {
       router.push("/login");
       return;
     }
-    try {
-      const auth = JSON.parse(raw);
-      if (!auth?.token) {
-        router.push("/login");
-        return;
-      }
-      setToken(auth.token);
-      setRole(auth.role || "member");
-      setUsername(auth.username || "");
-    } catch {
-      router.push("/login");
-    }
+    setToken(auth.token);
+    setRole(auth.role || "member");
+    setUsername(auth.username || "");
   }, [router]);
 
-  async function loadData(currentToken) {
+  async function loadWorkspace(currentToken) {
     const tokenToUse = currentToken || token;
     if (!tokenToUse) return;
     const authHeader = { Authorization: `Bearer ${tokenToUse}` };
     try {
-      const [dealsRes, contactsRes] = await Promise.all([
-        fetch(`${API}/deals`, { headers: authHeader }),
-        fetch(`${API}/crm/contacts`, { headers: authHeader }),
+      const [workspaceRes, statusRes, automationRes] = await Promise.all([
+        fetch(`${API}/workspace/bootstrap`, { headers: authHeader }),
+        fetch(`${API}/integrations/status`, { headers: authHeader }),
+        fetch(`${API}/automation/recommendations`, { headers: authHeader }),
       ]);
-      if (!dealsRes.ok || !contactsRes.ok) {
-        setMessage("Session expired. Please login again.");
-        return;
-      }
-      const dealPayload = await dealsRes.json();
-      const contactPayload = await contactsRes.json();
-      setDeals(dealPayload);
-      setContacts(contactPayload);
-      const summaryRes = await fetch(`${API}/analytics/summary`, { headers: authHeader });
-      if (summaryRes.ok) setAnalytics(await summaryRes.json());
-      const statusRes = await fetch(`${API}/integrations/status`, { headers: authHeader });
+      if (workspaceRes.ok) setBootstrap(await workspaceRes.json());
       if (statusRes.ok) setIntegrationStatus(await statusRes.json());
-      const automationRes = await fetch(`${API}/automation/recommendations`, { headers: authHeader });
       if (automationRes.ok) setAutomation(await automationRes.json());
-      if (dealPayload.length && !selectedDealId) {
-        setSelectedDealId(String(dealPayload[0].id));
-      }
     } catch {
-      setMessage("Could not load dashboard data.");
+      setMessage("Could not load workspace data.");
     }
   }
 
   useEffect(() => {
-    if (token) loadData(token);
+    if (token) loadWorkspace(token);
   }, [token]);
 
-  useEffect(() => {
-    if (!token || !selectedDealId) {
-      setDocuments([]);
-      setQueryHistory([]);
-      setNotes([]);
-      return;
-    }
-    const authHeader = { Authorization: `Bearer ${token}` };
-    Promise.all([
-      fetch(`${API}/documents/deal/${selectedDealId}`, { headers: authHeader }),
-      fetch(`${API}/ai/history/${selectedDealId}`, { headers: authHeader }),
-      fetch(`${API}/deals/${selectedDealId}/notes`, { headers: authHeader }),
-    ])
-      .then(async ([docRes, histRes, notesRes]) => {
-        setDocuments(docRes.ok ? await docRes.json() : []);
-        setQueryHistory(histRes.ok ? await histRes.json() : []);
-        setNotes(notesRes.ok ? await notesRes.json() : []);
-      })
-      .catch(() => {
-        setDocuments([]);
-        setQueryHistory([]);
-        setNotes([]);
+  async function seedDemo() {
+    setBusy("seed");
+    try {
+      const res = await fetch(`${API}/demo/seed`, {
+        method: "POST",
+        headers,
       });
-  }, [token, selectedDealId]);
+      const data = await res.json();
+      if (!res.ok) {
+        setMessage(data.detail || "Could not seed local MVP data.");
+        return;
+      }
+      setMessage(
+        `Seeded ${data.deals_created} deals, ${data.contacts_created} contacts, and ${data.investor_pipeline_entries_created} investor records.`
+      );
+      await loadWorkspace();
+    } finally {
+      setBusy("");
+    }
+  }
 
   async function createDeal(e) {
     e.preventDefault();
     setBusy("deal");
-    const form = new FormData(e.currentTarget);
-    const name = form.get("name");
-    const description = form.get("description");
     try {
       const res = await fetch(`${API}/deals`, {
         method: "POST",
         headers,
-        body: JSON.stringify({ name, description }),
+        body: JSON.stringify({
+          name: newDealName,
+          city: newDealCity,
+          asset_type: newDealAssetType,
+          priority: "high",
+          next_action: "Review imported diligence and investor fit.",
+        }),
       });
+      const data = await res.json();
       if (!res.ok) {
-        const data = await res.json();
-        setMessage(data.detail || "Deal creation failed");
+        setMessage(data.detail || "Could not create deal.");
         return;
       }
-      const created = await res.json();
-      e.currentTarget.reset();
-      setSelectedDealId(String(created.id));
-      setMessage(`Deal #${created.id} created`);
-      loadData();
+      setNewDealName("");
+      setNewDealCity("");
+      setMessage(`Created deal ${data.name}.`);
+      await loadWorkspace();
     } finally {
       setBusy("");
     }
@@ -150,203 +114,58 @@ export default function AppPage() {
   async function createContact(e) {
     e.preventDefault();
     setBusy("contact");
-    const form = new FormData(e.currentTarget);
-    const full_name = form.get("full_name");
-    const email = form.get("email");
-    const contact_type = form.get("contact_type");
-    const deal_id = Number(form.get("deal_id") || 0) || null;
     try {
       const res = await fetch(`${API}/crm/contacts`, {
         method: "POST",
         headers,
-        body: JSON.stringify({ full_name, email, contact_type, deal_id }),
-      });
-      if (!res.ok) {
-        const data = await res.json();
-        setMessage(data.detail || "Contact creation failed");
-        return;
-      }
-      e.currentTarget.reset();
-      setMessage("Contact created");
-      loadData();
-    } finally {
-      setBusy("");
-    }
-  }
-
-  async function uploadDocument(e) {
-    e.preventDefault();
-    setBusy("upload");
-    const form = new FormData(e.currentTarget);
-    const dealId = form.get("deal_id") || selectedDealId;
-    const file = form.get("file");
-    if (!dealId) {
-      setMessage("Select a deal before uploading.");
-      setBusy("");
-      return;
-    }
-    const req = new FormData();
-    req.append("file", file);
-    try {
-      const res = await fetch(`${API}/documents/${dealId}/upload`, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
-        body: req,
-      });
-      const data = await res.json();
-      setMessage(res.ok ? `Uploaded ${data.filename} to deal #${dealId}` : data.detail || "Upload failed");
-      if (res.ok) {
-        const docRes = await fetch(`${API}/documents/deal/${dealId}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (docRes.ok) setDocuments(await docRes.json());
-      }
-    } finally {
-      setBusy("");
-    }
-  }
-
-  async function askQuestion(e) {
-    e.preventDefault();
-    setBusy("ask");
-    if (!selectedDealId) {
-      setMessage("Enter a deal ID first.");
-      setBusy("");
-      return;
-    }
-    try {
-      const res = await fetch(`${API}/ai/query/${selectedDealId}`, {
-        method: "POST",
-        headers,
-        body: JSON.stringify({ question }),
+        body: JSON.stringify({
+          full_name: newContactName,
+          email: newContactEmail,
+          contact_type: newContactType,
+          company_name: newContactCompany,
+        }),
       });
       const data = await res.json();
       if (!res.ok) {
-        setMessage(data.detail || "AI query failed");
+        setMessage(data.detail || "Could not create contact.");
         return;
       }
-      setAnswer(`${data.answer}\n\nCitations: ${data.citations.join(", ")}`);
-      const histRes = await fetch(`${API}/ai/history/${selectedDealId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (histRes.ok) setQueryHistory(await histRes.json());
-    } finally {
-      setBusy("");
-    }
-  }
-
-  async function updateDealStage(e) {
-    e.preventDefault();
-    if (!selectedDealId) {
-      setMessage("Select a deal first.");
-      return;
-    }
-    setBusy("stage");
-    try {
-      const res = await fetch(`${API}/deals/${selectedDealId}/stage`, {
-        method: "PATCH",
-        headers,
-        body: JSON.stringify({ stage: targetStage }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setMessage(data.detail || "Stage update failed");
-        return;
-      }
-      setMessage(`Deal #${selectedDealId} stage updated to ${data.stage}`);
-      loadData();
-    } finally {
-      setBusy("");
-    }
-  }
-
-  async function addNote(e) {
-    e.preventDefault();
-    if (!selectedDealId) {
-      setMessage("Select a deal first.");
-      return;
-    }
-    if (!noteText.trim()) return;
-    setBusy("note");
-    try {
-      const res = await fetch(`${API}/deals/${selectedDealId}/notes`, {
-        method: "POST",
-        headers,
-        body: JSON.stringify({ content: noteText }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setMessage(data.detail || "Could not add note");
-        return;
-      }
-      setNoteText("");
-      setMessage("Note added");
-      setNotes((prev) => [data, ...prev].slice(0, 30));
+      setNewContactName("");
+      setNewContactEmail("");
+      setNewContactCompany("");
+      setMessage(`Created contact ${data.full_name}.`);
+      await loadWorkspace();
     } finally {
       setBusy("");
     }
   }
 
   function logout() {
-    localStorage.removeItem("reos_auth");
+    clearStoredAuth();
     router.push("/login");
   }
 
-  const visibleDeals = deals.slice(0, 15);
-  const visibleContacts = contacts.slice(0, 20);
-  const selectedDeal = deals.find((d) => String(d.id) === String(selectedDealId));
-  const stageDistEntries = Object.entries(analytics.stage_distribution || {});
-  const filteredDeals = visibleDeals.filter((d) => {
-    const stageMatch = filterStage === "All" || d.stage === filterStage;
-    const q = searchTerm.trim().toLowerCase();
-    const searchMatch = q.length === 0 || `${d.id} ${d.name} ${d.description || ""}`.toLowerCase().includes(q);
-    return stageMatch && searchMatch;
-  });
-  const activities = [
-    ...documents.map((d) => ({ ts: d.created_at, kind: "document", text: `Uploaded ${d.filename}` })),
-    ...queryHistory.map((h) => ({ ts: h.created_at, kind: "ai", text: `AI query: ${h.question}` })),
-    ...notes.map((n) => ({ ts: n.created_at, kind: "note", text: `Note by ${n.author}: ${n.content}` })),
-  ]
-    .sort((a, b) => new Date(b.ts).getTime() - new Date(a.ts).getTime())
-    .slice(0, 12);
-
-  function formatAnswer(text) {
-    if (!text) return "";
-    return text
-      .replace(/\*\*(.*?)\*\*/g, "$1")
-      .replace(/\n{3,}/g, "\n\n")
-      .trim();
-  }
-
-  function exportDealsCsv() {
-    const rows = [
-      ["id", "name", "stage", "description"],
-      ...filteredDeals.map((d) => [String(d.id), d.name, d.stage, d.description || ""]),
-    ];
-    const csv = rows
-      .map((r) =>
-        r
-          .map((v) => `"${String(v).replace(/"/g, '""')}"`)
-          .join(",")
-      )
-      .join("\n");
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "reos_filtered_deals.csv";
-    a.click();
-    URL.revokeObjectURL(url);
-  }
+  const analytics = bootstrap?.analytics || {
+    total_deals: 0,
+    total_contacts: 0,
+    total_documents: 0,
+    stage_distribution: {},
+  };
+  const deals = bootstrap?.deals || [];
+  const contacts = bootstrap?.contacts || [];
+  const investorPipeline = bootstrap?.investor_pipeline || [];
+  const operations = bootstrap?.operations || { high_priority_items: [], overdue_like_items: [] };
 
   return (
-    <main className="container dashboard-shell">
-      <div className="heading-row">
-        <h1 className="title">REOS Dashboard</h1>
-        <p className="role-pill">
-          {username || "user"} · {role}
-        </p>
-      </div>
+    <AppShell
+      title="Command Center"
+      subtitle="Local MVP for deals, contacts, investor workflow, diligence operations, and spreadsheet-driven onboarding."
+      username={username}
+      role={role}
+      onLogout={logout}
+    >
+      {message ? <p className="message">{message}</p> : null}
+
       <div className="stats-row">
         <div className="stat-card">
           <span>Deals</span>
@@ -361,65 +180,67 @@ export default function AppPage() {
           <strong>{analytics.total_documents}</strong>
         </div>
         <div className="stat-card">
-          <span>Active Deal</span>
-          <strong>{selectedDealId || "-"}</strong>
+          <span>Investor Signals</span>
+          <strong>{investorPipeline.length}</strong>
         </div>
       </div>
-      <div className="actions">
-        <button onClick={() => loadData()} disabled={busy === "refresh"}>
-          Refresh
-        </button>
-        <button onClick={logout}>Logout</button>
-        <Link href="/" className="button-link button-secondary">
-          Landing
-        </Link>
-      </div>
-      {message && <p className="message">{message}</p>}
 
       <section className="grid">
         <div className="card">
-          <h2>Portfolio Analytics</h2>
-          {stageDistEntries.length === 0 ? (
-            <p>No stage data yet.</p>
+          <h2>Local MVP Controls</h2>
+          <p className="muted-line">
+            Seed demo data, import spreadsheets, and validate the workflows before real APIs are connected.
+          </p>
+          <div className="actions">
+            <button onClick={seedDemo} disabled={busy === "seed"}>
+              {busy === "seed" ? "Seeding..." : "Seed Demo Data"}
+            </button>
+            <button onClick={() => loadWorkspace()} disabled={busy === "refresh"}>
+              Refresh Workspace
+            </button>
+            <Link href="/app/integrations" className="button-link button-secondary">
+              Open Integrations
+            </Link>
+            <Link href="/app/import" className="button-link button-secondary">
+              Open Import Center
+            </Link>
+          </div>
+          {integrationStatus ? (
+            <ul className="list">
+              <li>Runtime mode: {integrationStatus.runtime_mode}</li>
+              <li>AI provider: {integrationStatus.ai_provider}</li>
+              <li>Automation mode: {integrationStatus.automation_mode}</li>
+            </ul>
           ) : (
-            <div className="stage-bars">
-              {stageDistEntries.map(([stage, count]) => {
-                const pct = analytics.total_deals ? Math.max(6, Math.round((count / analytics.total_deals) * 100)) : 0;
-                return (
-                  <button
-                    key={stage}
-                    className={`stage-row stage-button ${filterStage === stage ? "stage-active" : ""}`}
-                    onClick={() => setFilterStage(stage)}
-                    type="button"
-                  >
-                    <div className="stage-label">
-                      <span>{stage}</span>
-                      <strong>{count}</strong>
-                    </div>
-                    <div className="stage-track">
-                      <div className="stage-fill" style={{ width: `${pct}%` }} />
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
+            <p>Integration state not loaded yet.</p>
           )}
         </div>
+
         <div className="card">
-          <h2>Deal Stage Control</h2>
-          <p className="muted-line">
-            Current: <strong>{selectedDeal ? selectedDeal.stage : "No deal selected"}</strong>
-          </p>
-          <form onSubmit={updateDealStage} className="stack-form">
-            <select value={targetStage} onChange={(e) => setTargetStage(e.target.value)}>
-              {stageOptions.map((stage) => (
-                <option value={stage} key={stage}>
-                  {stage}
-                </option>
-              ))}
+          <h2>Create Deal</h2>
+          <form onSubmit={createDeal} className="stack-form">
+            <input
+              name="name"
+              placeholder="Deal name"
+              value={newDealName}
+              onChange={(e) => setNewDealName(e.target.value)}
+              required
+            />
+            <input
+              name="city"
+              placeholder="City"
+              value={newDealCity}
+              onChange={(e) => setNewDealCity(e.target.value)}
+            />
+            <select value={newDealAssetType} onChange={(e) => setNewDealAssetType(e.target.value)}>
+              <option value="multifamily">multifamily</option>
+              <option value="office">office</option>
+              <option value="industrial">industrial</option>
+              <option value="retail">retail</option>
+              <option value="hospitality">hospitality</option>
             </select>
-            <button type="submit" disabled={busy === "stage"}>
-              {busy === "stage" ? "Updating..." : "Update Stage"}
+            <button type="submit" disabled={busy === "deal"}>
+              {busy === "deal" ? "Creating..." : "Create Deal"}
             </button>
           </form>
         </div>
@@ -427,25 +248,114 @@ export default function AppPage() {
 
       <section className="grid">
         <div className="card">
-          <h2>Azure Integration Readiness</h2>
-          {!integrationStatus ? (
-            <p>Loading integration status...</p>
-          ) : (
-            <ul className="list">
-              <li>AI provider: {integrationStatus.ai_provider}</li>
-              <li>Azure OpenAI configured: {integrationStatus.azure_openai_configured ? "Yes" : "No"}</li>
-              <li>Azure Blob configured: {integrationStatus.azure_blob_configured ? "Yes" : "No"}</li>
-              <li>Azure AD configured: {integrationStatus.azure_ad_configured ? "Yes" : "No"}</li>
-              <li>Key Vault configured: {integrationStatus.azure_key_vault_configured ? "Yes" : "No"}</li>
-              <li>Automation mode: {integrationStatus.automation_mode}</li>
-            </ul>
-          )}
+          <h2>Create Contact / Investor</h2>
+          <form onSubmit={createContact} className="stack-form">
+            <input
+              value={newContactName}
+              onChange={(e) => setNewContactName(e.target.value)}
+              placeholder="Full name"
+              required
+            />
+            <input
+              value={newContactEmail}
+              onChange={(e) => setNewContactEmail(e.target.value)}
+              placeholder="Email"
+              type="email"
+            />
+            <input
+              value={newContactCompany}
+              onChange={(e) => setNewContactCompany(e.target.value)}
+              placeholder="Company name"
+            />
+            <select value={newContactType} onChange={(e) => setNewContactType(e.target.value)}>
+              <option value="investor">investor</option>
+              <option value="broker">broker</option>
+              <option value="lender">lender</option>
+              <option value="legal">legal</option>
+            </select>
+            <button type="submit" disabled={busy === "contact"}>
+              {busy === "contact" ? "Creating..." : "Create Contact"}
+            </button>
+          </form>
         </div>
+
+        <div className="card">
+          <h2>Operational Watchlist</h2>
+          <h3>High Priority</h3>
+          <ul className="list">
+            {operations.high_priority_items.length === 0 ? (
+              <li>No high priority items yet.</li>
+            ) : (
+              operations.high_priority_items.map((item) => <li key={item}>{item}</li>)
+            )}
+          </ul>
+          <h3>Open Diligence</h3>
+          <ul className="list">
+            {operations.overdue_like_items.length === 0 ? (
+              <li>No open diligence blockers.</li>
+            ) : (
+              operations.overdue_like_items.map((item) => <li key={item}>{item}</li>)
+            )}
+          </ul>
+        </div>
+      </section>
+
+      <section className="grid">
+        <div className="card">
+          <h2>Active Deals</h2>
+          <div className="workspace-table">
+            {deals.map((deal) => (
+              <Link key={deal.id} href={`/app/deals/${deal.id}`} className="table-row-link">
+                <strong>{deal.name}</strong>
+                <span>
+                  {deal.asset_type || "asset"} · {deal.city || "unknown city"} · {deal.stage}
+                </span>
+              </Link>
+            ))}
+          </div>
+        </div>
+
+        <div className="card">
+          <h2>Contacts and Companies</h2>
+          <div className="workspace-table">
+            {contacts.slice(0, 18).map((contact) => (
+              <div key={contact.id} className="table-row-link static-row">
+                <strong>{contact.full_name}</strong>
+                <span>
+                  {contact.contact_type}
+                  {contact.investor_type ? ` · ${contact.investor_type}` : ""}
+                  {contact.email ? ` · ${contact.email}` : ""}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="grid">
+        <div className="card">
+          <h2>Investor Pipeline</h2>
+          <div className="workspace-table">
+            {investorPipeline.length === 0 ? (
+              <p>No investor pipeline records yet.</p>
+            ) : (
+              investorPipeline.slice(0, 18).map((item) => (
+                <div key={item.id} className="table-row-link static-row">
+                  <strong>{item.status}</strong>
+                  <span>
+                    Commitment ${Number(item.commitment_amount || 0).toLocaleString()} · {item.conviction}
+                  </span>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+
         <div className="card">
           <h2>Automation Priorities</h2>
           <ul className="list">
             {automation.recommendations.length === 0 ? (
-              <li>No recommendations available.</li>
+              <li>No automation recommendations available.</li>
             ) : (
               automation.recommendations.map((item) => (
                 <li key={item.id}>
@@ -456,194 +366,6 @@ export default function AppPage() {
           </ul>
         </div>
       </section>
-
-      <section className="grid">
-        <div className="card">
-          <h2>Create Deal</h2>
-          <form onSubmit={createDeal} className="stack-form">
-            <input name="name" placeholder="Deal name" required />
-            <input name="description" placeholder="Description" />
-            <button type="submit" disabled={busy === "deal"}>
-              {busy === "deal" ? "Creating..." : "Create"}
-            </button>
-          </form>
-          <h3>Deals ({deals.length})</h3>
-          <div className="dashboard-toolbar">
-            <select value={filterStage} onChange={(e) => setFilterStage(e.target.value)}>
-              <option value="All">All stages</option>
-              {stageOptions.map((stage) => (
-                <option key={stage} value={stage}>
-                  {stage}
-                </option>
-              ))}
-            </select>
-            <input
-              placeholder="Search deals by id/name"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-            <button type="button" onClick={exportDealsCsv}>
-              Export CSV
-            </button>
-          </div>
-          <div className="field-row">
-            <label htmlFor="active-deal">Active deal for upload/query</label>
-            <select
-              id="active-deal"
-              value={selectedDealId}
-              onChange={(e) => setSelectedDealId(e.target.value)}
-            >
-              <option value="">Select a deal</option>
-              {deals.slice(0, 100).map((deal) => (
-                <option key={deal.id} value={deal.id}>
-                  #{deal.id} {deal.name}
-                </option>
-              ))}
-            </select>
-          </div>
-          <ul className="list">
-            {filteredDeals.map((d) => (
-              <li key={d.id}>
-                #{d.id} {d.name} - {d.stage}
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        <div className="card">
-          <h2>Create Contact</h2>
-          <form onSubmit={createContact} className="stack-form">
-            <input name="full_name" placeholder="Full name" required />
-            <input name="email" placeholder="Email" />
-            <input name="contact_type" placeholder="investor/broker" defaultValue="investor" />
-            <input name="deal_id" placeholder="Deal ID" />
-            <button type="submit" disabled={busy === "contact"}>
-              {busy === "contact" ? "Creating..." : "Create"}
-            </button>
-          </form>
-          <h3>Contacts ({contacts.length})</h3>
-          <ul className="list">
-            {visibleContacts.map((c) => (
-              <li key={c.id}>
-                {c.full_name} ({c.contact_type})
-              </li>
-            ))}
-          </ul>
-        </div>
-      </section>
-
-      <section className="grid">
-        <div className="card">
-          <h2>Deal Documents</h2>
-          {selectedDealId ? (
-            <ul className="list">
-              {documents.length === 0 ? (
-                <li>No documents uploaded for this deal yet.</li>
-              ) : (
-                documents.map((doc) => (
-                  <li key={doc.id}>
-                    {doc.filename} (doc #{doc.id})
-                  </li>
-                ))
-              )}
-            </ul>
-          ) : (
-            <p>Select a deal to view documents.</p>
-          )}
-        </div>
-        <div className="card">
-          <h2>Deal Notes</h2>
-          <form onSubmit={addNote} className="stack-form">
-            <textarea
-              rows={3}
-              placeholder="Add an internal diligence note for the selected deal..."
-              value={noteText}
-              onChange={(e) => setNoteText(e.target.value)}
-            />
-            <button type="submit" disabled={busy === "note"}>
-              {busy === "note" ? "Saving..." : "Add Note"}
-            </button>
-          </form>
-          <ul className="list" style={{ marginTop: 12 }}>
-            {notes.length === 0 ? (
-              <li>No notes yet.</li>
-            ) : (
-              notes.map((note) => (
-                <li key={note.id}>
-                  <strong>{note.author}:</strong> {note.content}
-                </li>
-              ))
-            )}
-          </ul>
-        </div>
-      </section>
-
-      <section className="card wide-card">
-        <h2>Activity Timeline</h2>
-        <ul className="list">
-          {activities.length === 0 ? (
-            <li>No activity yet for this deal.</li>
-          ) : (
-            activities.map((a, idx) => (
-              <li key={`${a.kind}-${idx}`}>
-                <strong>[{a.kind.toUpperCase()}]</strong> {a.text}
-              </li>
-            ))
-          )}
-        </ul>
-      </section>
-
-      <section className="card wide-card">
-        <h2>Operational Challenges To Plan For</h2>
-        <ul className="list">
-          {automation.challenges.length === 0 ? (
-            <li>Challenge profile unavailable.</li>
-          ) : (
-            automation.challenges.map((challenge, idx) => <li key={`${idx}-${challenge.slice(0, 12)}`}>{challenge}</li>)
-          )}
-        </ul>
-      </section>
-
-      <section className="card wide-card">
-        <h2>Document Upload + AI Query</h2>
-        <form onSubmit={uploadDocument} className="inline-form">
-          <input name="deal_id" placeholder={`Deal ID (default: ${selectedDealId || "none"})`} />
-          <input name="file" type="file" required />
-          <button type="submit" disabled={busy === "upload"}>
-            {busy === "upload" ? "Uploading..." : "Upload"}
-          </button>
-        </form>
-
-        <form onSubmit={askQuestion} className="stack-form" style={{ marginTop: 12 }}>
-          <input
-            placeholder="Deal ID for query"
-            value={selectedDealId}
-            onChange={(e) => setSelectedDealId(e.target.value)}
-          />
-          <textarea value={question} onChange={(e) => setQuestion(e.target.value)} rows={4} />
-          <button type="submit" disabled={busy === "ask"}>
-            {busy === "ask" ? "Running AI..." : "Ask AI"}
-          </button>
-        </form>
-        <div className="answer-box ai-answer">{formatAnswer(answer)}</div>
-      </section>
-
-      <section className="card wide-card">
-        <h2>AI Query History</h2>
-        <ul className="list">
-          {queryHistory.length === 0 ? (
-            <li>No AI history for selected deal.</li>
-          ) : (
-            queryHistory.map((item) => (
-              <li key={item.id}>
-                <strong>Q:</strong> {item.question}
-                <br />
-                <span className="muted-line">By {item.username} · citations: {item.citations || "n/a"}</span>
-              </li>
-            ))
-          )}
-        </ul>
-      </section>
-    </main>
+    </AppShell>
   );
 }
