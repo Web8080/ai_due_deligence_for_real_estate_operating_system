@@ -1,165 +1,129 @@
 import Link from "next/link";
-import Image from "next/image";
+
+const pillars = [
+  {
+    title: "Deals",
+    copy: "Move from intake to committee with stage gates, diligence surfaces, and operator-ready watchlists.",
+  },
+  {
+    title: "Document Intelligence",
+    copy: "Classify, summarize, and search deal documents with Ollama-first assistance and evidence-aware workflows.",
+  },
+  {
+    title: "Investor Growth",
+    copy: "Coordinate prospects, outreach momentum, commitments, and onboarding without losing relationship memory.",
+  },
+  {
+    title: "Governance",
+    copy: "Track audit events, integration posture, AI run history, and operating controls in one control plane.",
+  },
+];
 
 export default function LandingPage() {
   return (
-    <main>
-      <header className="landing-header">
-        <div className="container header-inner">
-          <div className="brand">REOS</div>
-          <nav className="nav-links">
-            <Link href="/product">Product</Link>
-            <Link href="/ai-engine">AI Engine</Link>
-            <Link href="/workflow">Workflow</Link>
-            <Link href="/platform">Platform</Link>
-          </nav>
-          <div className="header-actions">
-            <Link href="/login" className="button-link button-secondary">
-              Sign in
-            </Link>
-            <Link href="/signup" className="button-link">
-              Create user
-            </Link>
-          </div>
+    <main className="public-shell">
+      <header className="public-header">
+        <Link href="/" className="public-brand">
+          REOS
+        </Link>
+        <nav className="public-nav">
+          <a href="#overview">Overview</a>
+          <a href="#deals">Deals</a>
+          <a href="#operations">Operations</a>
+          <a href="#governance">Governance</a>
+        </nav>
+        <div className="public-actions">
+          <Link href="/login" className="secondary-link">
+            Sign in
+          </Link>
+          <Link href="/signup" className="primary-link">
+            Access setup
+          </Link>
         </div>
       </header>
 
-      <section className="container landing-hero">
-        <div>
-          <p className="eyebrow">Real Estate Operating System</p>
-          <h1 className="hero-title">Internal operating platform for acquisitions and due diligence</h1>
-          <p className="hero-copy">
-            Replace fragmented tools with one platform for deal pipeline, documents, investor CRM, and
-            AI-grounded underwriting answers.
-          </p>
-          <div className="actions">
-            <Link href="/signup" className="button-link">
-              Create organization user
-            </Link>
-            <Link href="/login" className="button-link button-secondary">
-              Login to dashboard
-            </Link>
-          </div>
-        </div>
-        <div className="hero-image-wrap">
-          <Image
-            src="/images/hero-dashboard.svg"
-            alt="REOS dashboard preview"
-            width={800}
-            height={520}
-            className="hero-image"
-            priority
-          />
-        </div>
-      </section>
-
-      <section id="product" className="container landing-section">
-        <h2>Everything in one operating layer</h2>
-        <div className="feature-grid">
-          <article className="feature-card">
-            <h3>Deal pipeline</h3>
-            <p>Move opportunities from screening to committee with a consistent stage model.</p>
-          </article>
-          <article className="feature-card">
-            <h3>Document system</h3>
-            <p>Upload leases, legal docs, and memos with extraction, chunking, and traceable storage.</p>
-          </article>
-          <article className="feature-card">
-            <h3>Investor CRM</h3>
-            <p>Track contacts, counterparties, and interactions linked directly to each deal.</p>
-          </article>
-          <article className="feature-card">
-            <h3>AI due diligence</h3>
-            <p>Ask portfolio questions and receive grounded responses with document citations.</p>
-          </article>
-        </div>
-      </section>
-
-      <section id="ai" className="container landing-two-col">
-        <div className="section-copy">
-          <p className="eyebrow">AI layer</p>
-          <h2>Grounded AI analysis with evidence</h2>
+      <section className="public-hero" id="overview">
+        <div className="public-hero-copy">
+          <p className="section-eyebrow">Enterprise Real Estate Operating System</p>
+          <h1>Decision compression for acquisitions, diligence, investor growth, and governance.</h1>
           <p>
-            Query uploaded documents and get responses tied to retrieved context. The system is designed for
-            traceability, fallback behavior, and operational reliability.
+            REOS replaces fragmented deal trackers, inbox workflows, document silos, and ad hoc investor spreadsheets
+            with one operating layer. The system is built for operators who need to move quickly without giving up
+            traceability.
           </p>
-          <ul className="list">
-            <li>Embeddings + retrieval pipeline</li>
-            <li>Citation-backed answer output</li>
-            <li>Ollama-first local runtime support</li>
-            <li>Graceful fallback chain for resilience</li>
-          </ul>
+          <div className="public-actions-row">
+            <Link href="/login" className="primary-link">
+              Open enterprise workspace
+            </Link>
+            <Link href="/app" className="secondary-link">
+              View operator shell
+            </Link>
+          </div>
         </div>
-        <Image src="/images/section-ai.svg" alt="AI analysis section" width={640} height={360} className="section-img" />
+        <div className="hero-grid-panel">
+          <div className="hero-kpi">
+            <span>Portfolio watch</span>
+            <strong>Pipeline, committee, investors, workflows</strong>
+          </div>
+          <div className="hero-kpi">
+            <span>AI posture</span>
+            <strong>Ollama-first with governed escalation paths</strong>
+          </div>
+          <div className="hero-kpi">
+            <span>Identity</span>
+            <strong>Username and password sign-in with role-based access</strong>
+          </div>
+          <div className="hero-kpi">
+            <span>Control plane</span>
+            <strong>Integrations, automation, audit, monitoring</strong>
+          </div>
+        </div>
       </section>
 
-      <section id="workflow" className="container landing-two-col reverse">
-        <div className="section-copy">
-          <p className="eyebrow">Execution workflow</p>
-          <h2>Designed for team operations, not demos</h2>
+      <section className="public-section" id="deals">
+        <div className="section-heading">
+          <p className="section-eyebrow">Operating Domains</p>
+          <h2>The workspace is organized around actual execution pressure.</h2>
+        </div>
+        <div className="public-card-grid">
+          {pillars.map((pillar) => (
+            <article key={pillar.title} className="public-card">
+              <h3>{pillar.title}</h3>
+              <p>{pillar.copy}</p>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="public-section public-split" id="operations">
+        <div className="public-card">
+          <p className="section-eyebrow">Workflow</p>
+          <h2>Execution lanes stay visible from intake through closing.</h2>
           <p>
-            Users can sign in as admins, managers, or analysts, then execute deal creation, uploads, and AI query
-            workflows in a role-aware dashboard.
+            Active diligence, committee preparation, investor coordination, and exception handling stay in one shell so
+            teams can manage blockers before they become surprises.
           </p>
         </div>
-        <Image
-          src="/images/section-workflow.svg"
-          alt="Workflow stages section"
-          width={640}
-          height={360}
-          className="section-img"
-        />
-      </section>
-
-      <section id="platform" className="container landing-section">
-        <h2>Platform operating modes</h2>
-        <div className="feature-grid">
-          <article className="feature-card">
-            <h3>Local secure mode</h3>
-            <p>Run with SQLite, local OCR, and Ollama for internal-only development and offline testing.</p>
-          </article>
-          <article className="feature-card">
-            <h3>Operations mode</h3>
-            <p>Deploy with role-based access, persistent data controls, and monitored workflow execution.</p>
-          </article>
-          <article className="feature-card">
-            <h3>Governed mode</h3>
-            <p>Extend with stricter auditability, incident visibility, and change management controls.</p>
-          </article>
+        <div className="public-card">
+          <p className="section-eyebrow">AI Layer</p>
+          <h2>Task-oriented AI, not novelty chat.</h2>
+          <p>
+            Every AI surface is framed around summaries, contradictions, next actions, relationship coverage, and
+            executive briefings. Ollama remains the default provider, with enterprise overrides available when needed.
+          </p>
         </div>
       </section>
 
-      <footer className="landing-footer">
-        <div className="container footer-inner">
-          <div className="footer-brand">
-            <strong>REOS Internal Platform</strong>
-            <p>Real Estate Operating System for controlled diligence, document analysis, and execution workflows.</p>
-            <div className="footer-badges">
-              <span>Internal Use Only</span>
-              <span>Role-Based Access</span>
-              <span>Audit Ready</span>
-            </div>
-          </div>
-          <div className="footer-column">
-            <h4>Platform</h4>
-            <div className="footer-links">
-              <Link href="/platform">Platform</Link>
-              <Link href="/workspace">Workspace</Link>
-              <Link href="/login">Sign in</Link>
-              <Link href="/signup">Create user</Link>
-            </div>
-          </div>
-          <div className="footer-column">
-            <h4>Operations</h4>
-            <div className="footer-links">
-              <Link href="/operations">Operations</Link>
-              <Link href="/workflow-stages">Workflow stages</Link>
-              <Link href="/ai-controls">AI controls</Link>
-              <Link href="/operating-modes">Operating modes</Link>
-            </div>
-          </div>
+      <section className="public-section" id="governance">
+        <div className="public-card wide-public-card">
+          <p className="section-eyebrow">Governance</p>
+          <h2>Built to survive audit, scale pressure, and long-term ownership.</h2>
+          <p>
+            REOS tracks integration posture, AI activity, session state, and operating controls so the platform can
+            evolve into a durable enterprise system rather than a polished prototype.
+          </p>
         </div>
-      </footer>
+      </section>
     </main>
   );
 }

@@ -56,8 +56,8 @@ REOS gives internal teams one system to:
 
 ## Features
 
-- **Landing, login, and authenticated dashboard** – KPIs, market overview, pipeline, tasks, top agents, activity feed, performance tracking
-- **Deal and CRM** – Deals hub, deal workspace, contacts and companies
+- **Landing, login, and authenticated dashboard** – KPIs, pipeline, **decision-velocity proxy** (intake to IC pressure), **six core workflow cards** (deals, CRM, docs, investors, reports), tasks, activity
+- **Deal and CRM** – Deals hub, **stage control on deal workspace**, contacts, companies, investor email import
 - **Document intelligence** – Upload, extraction, and RAG-based query with citations
 - **Ollama AI** – Contextual chat panel on every page; workspace-aware copilot
 - **Role-based access** – `admin`, `manager`, `analyst` with governance and admin surfaces
@@ -189,6 +189,10 @@ flowchart TD
 
 ---
 
+## Product demo vs production connectors
+
+For roughly full UI and API depth **without** Microsoft, DocuSign, data vendors, or other externals: run SQLite + local auth, enable `REOS_PRODUCT_DEMO_MODE=true` so the integrations control plane is labeled as demo-only, and use **Load demonstration data** on Overview (admin/manager) or `POST /demo/seed`. Optional `REOS_ALLOW_LOCAL_SIGNUP=true` adds analyst self-provision for sandboxes. Production still expects Entra (or controlled provisioning) and real connector credentials.
+
 ## Quick Start
 
 **1. Backend**
@@ -236,9 +240,19 @@ Default users exist only when the backend is run with `REOS_ENABLE_LOCAL_BOOTSTR
 # Backend tests
 PYTHONPATH=. .venv/bin/python -m pytest backend/tests/test_smoke.py -q
 
-# Smoke script
+# Minimal smoke (deal + contact; optional AI if RUN_AI_SMOKE=1)
 python scripts/smoke_test.py
+
+# Full read-path smoke (seeds demo data, hits dashboard + overviews + governance)
+# Requires API running with REOS_ENABLE_LOCAL_BOOTSTRAP=true REOS_LOCAL_LOGIN_ENABLED=true
+export REOS_ENABLE_LOCAL_BOOTSTRAP=true REOS_LOCAL_LOGIN_ENABLED=true
+uvicorn backend.app.main:app --host 127.0.0.1 --port 8000
+# other terminal:
+python scripts/smoke_reos_full.py
+# Optional: RUN_COPILOT=1 RUN_AI_HEAVY=1 with Ollama or REOS_AI_MODE=local_fallback
 ```
+
+See `docs/AI_STRATEGY_AND_GUARDRAILS.md` for Ollama vs local_fallback, guardrails, and what stays placeholder without vendor APIs.
 
 **Non-stop orchestrator:**
 
@@ -257,6 +271,9 @@ python scripts/smoke_test.py
 - [Implementation roadmap](docs/implementation-roadmap.md)
 - [Interview preparation](docs/interview-preparation-guide.md)
 - [Azure integration](docs/azure-integration-and-automation.md)
+- [AI strategy and guardrails](docs/AI_STRATEGY_AND_GUARDRAILS.md)
+- [Data seed](docs/DATA_SEED.md)
+- [Core operating workflows and OS KPI](docs/operating-core-workflows.md)
 
 ---
 

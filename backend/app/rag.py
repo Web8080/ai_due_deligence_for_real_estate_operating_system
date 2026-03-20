@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 
 from .models import Chunk
 
-OLLAMA_URL = "http://localhost:11434"
+OLLAMA_URL = os.getenv("REOS_OLLAMA_URL", "http://localhost:11434").rstrip("/")
 EMBED_MODEL = "nomic-embed-text"
 GEN_MODEL = "llama3.1:8b"
 LOCAL_VECTOR_SIZE = 256
@@ -20,6 +20,23 @@ AZURE_API_VERSION = os.getenv("REOS_AZURE_OPENAI_API_VERSION", "2024-02-15-previ
 
 def current_ai_provider() -> str:
     return os.getenv("REOS_AI_PROVIDER", "ollama").strip().lower()
+
+
+def ollama_server_reachable(timeout: float = 2.0) -> bool:
+    """Best-effort probe; used for health/governance display only."""
+    try:
+        with httpx.Client(timeout=timeout) as client:
+            response = client.get(f"{OLLAMA_URL}/api/tags")
+            return response.status_code == 200
+    except Exception:
+        return False
+
+
+def current_ai_model() -> str:
+    provider = current_ai_provider()
+    if provider == "azure_openai" and _azure_openai_ready():
+        return os.getenv("REOS_AZURE_OPENAI_CHAT_DEPLOYMENT", "azure-openai-chat")
+    return os.getenv("REOS_OLLAMA_GEN_MODEL", GEN_MODEL)
 
 
 def _azure_openai_ready() -> bool:
@@ -116,6 +133,26 @@ async def generate_grounded_answer(question: str, chunks: List[Chunk]) -> str:
         return _local_generate_answer(question, chunks, citations)
 
 
+async def generate_workspace_answer(prompt: str, workspace: str, context: str) -> str:
+    system_prompt = (
+        "You are the REOS operating copilot. Keep answers concise, factual, and operational. "
+        "Prioritize blockers, next actions, risk, and investor or workflow impact."
+    )
+    combined_prompt = f"{system_prompt}\n\nWorkspace: {workspace}\n\nContext:\n{context}\n\nRequest: {prompt}"
+    if os.getenv("REOS_AI_MODE", "").lower() == "local_fallback":
+        return _local_workspace_answer(workspace, prompt, context)
+    provider = current_ai_provider()
+    if provider == "azure_openai" and _azure_openai_ready():
+        try:
+            return await _generate_with_azure(combined_prompt)
+        except Exception:
+            pass
+    try:
+        return await _generate_with_ollama(combined_prompt)
+    except Exception:
+        return _local_workspace_answer(workspace, prompt, context)
+
+
 async def _embed_with_ollama(text: str) -> List[float]:
     async with httpx.AsyncClient(timeout=60) as client:
         response = await client.post(
@@ -199,4 +236,17 @@ def _local_generate_answer(question: str, chunks: List[Chunk], citations: List[s
         f"Best evidence: {snippet}\n"
         "Uncertainties: This answer is heuristic because Ollama is unavailable.\n"
         f"Citations: {cited}"
+    )
+
+
+def _local_workspace_answer(workspace: str, prompt: str, context: str) -> str:
+    lines = [line.strip() for line in context.splitlines() if line.strip()]
+    selected = lines[:5]
+    if not selected:
+        return f"{workspace.title()} copilot could not find enough context to answer this request reliably."
+    return (
+        f"{workspace.title()} copilot fallback summary.\n"
+        f"Request: {prompt}\n"
+        f"Key context: {' '.join(selected[:3])}\n"
+        "Next move: review the active queue and confirm priorities before acting."
     )

@@ -1,0 +1,530 @@
+% Author: Victor.I
+% REOS AI & Automation -- Executive presentation for Overleaf (pdfLaTeX or XeLaTeX)
+% Upload this file to Overleaf as main document; compile with pdfLaTeX.
+
+\documentclass[aspectratio=169,11pt]{beamer}
+
+\usetheme{Madrid}
+\usecolortheme{default}
+
+\setbeamertemplate{navigation symbols}{}
+\setbeamertemplate{footline}[frame number]
+
+\title[REOS AI]{AI-Native Real Estate Operating System}
+\subtitle{Decision Engine, Automation Layer, Execution Pipelines \& Governance}
+\author{Victor.I}
+\date{\today}
+
+\begin{document}
+
+\begin{frame}
+  \titlepage
+\end{frame}
+
+\begin{frame}{Agenda}
+  \tableofcontents
+\end{frame}
+
+\section{Operating reality}
+
+\begin{frame}{How a real estate firm actually runs}
+  \small
+  \begin{itemize}
+    \item \textbf{Origination} -- sourcing, screening, early underwriting hooks
+    \item \textbf{Underwriting \& diligence} -- financial models, legal, environmental, tenant, capex
+    \item \textbf{Investor relations} -- materials, Q\&A, subscriptions, reporting
+    \item \textbf{Closing} -- dependencies, signatures, funding, conditions
+    \item \textbf{Asset management} -- operations, capex, leasing, dispositions
+    \item \textbf{Fundraising \& reporting} -- LP communications, compliance narratives
+  \end{itemize}
+  \vspace{0.5em}
+  \textit{Written from observed operations---not a textbook org chart.}
+\end{frame}
+
+\begin{frame}{Where executive time disappears}
+  \small
+  \begin{columns}[T]
+    \begin{column}{0.48\textwidth}
+      \textbf{Managing Director}
+      \begin{itemize}\itemsep2pt
+        \item Committee prep, exceptions, capital calls
+        \item Relationship repair, narrative control
+      \end{itemize}
+      \textbf{Head of Acquisitions}
+      \begin{itemize}\itemsep2pt
+        \item Pipeline triage, broker management, kill/continue calls
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \textbf{Analyst}
+      \begin{itemize}\itemsep2pt
+        \item Models, comps, document sweeps, slide churn
+      \end{itemize}
+      \textbf{IR / CFO}
+      \begin{itemize}\itemsep2pt
+        \item Data rooms, investor questions, forecasts, audits
+      \end{itemize}
+    \end{column}
+  \end{columns}
+  \vspace{0.5em}
+  \centering\textbf{Automation must attach to these real calendars---not generic ``efficiency.''}
+\end{frame}
+
+\section{Core problem and KPI}
+
+\begin{frame}{Reality of real estate operations}
+  \small
+  \begin{itemize}
+    \item Deals fragmented across systems
+    \item Manual underwriting and document review
+    \item Investor coordination is reactive
+    \item Reporting is manual and slow
+  \end{itemize}
+  \vspace{0.5em}
+  \textbf{Result}
+  \begin{itemize}
+    \item Slow decision cycles, lost deals
+    \item High operational cost, hidden risk
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Core KPI}
+  \centering
+  \Large Reduce time from deal discovery $\rightarrow$ investment decision
+  \vspace{1em}
+
+  \normalsize
+  Everything in scope compresses this timeline (time) or exposure to unknowns (risk).
+\end{frame}
+
+\begin{frame}{System loop}
+  \small
+  \centering
+  Input $\rightarrow$ Intelligence $\rightarrow$ Decision $\rightarrow$ Action $\rightarrow$ Feedback
+  \vspace{0.8em}
+
+  \raggedright
+  \begin{itemize}
+    \item Ingestion: deals, documents, CRM, \textbf{market and macro data}
+    \item Reasoning: LLM + RAG + financial models
+    \item Decision engine: score, risk, recommendation (human committee remains authoritative)
+    \item Workflow: tasks, CRM, outreach, closing dependencies
+    \item Governance: guardrails, audit, monitoring
+  \end{itemize}
+\end{frame}
+
+\section{Product strategy}
+
+\begin{frame}{Decision Compression (core strategy)}
+  \begin{block}{Principle}
+    The system compresses scattered information into \textbf{recommended decisions}, not just dashboards.
+  \end{block}
+  \begin{itemize}
+    \item Fewer tabs, fewer reconciliations---clear \textbf{decision deltas} and \textbf{exceptions}
+    \item \textbf{Deal kill-switch}: reject weak opportunities earlier with explicit rationale
+    \item \textbf{Committee prep}: predicted discussion themes, vote risk, pre-drafted packets
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Relationship Memory Graph}
+  \begin{itemize}
+    \item Contacts, companies, brokers, investors, lenders, vendors as a \textbf{graph}---not flat CRM rows
+    \item \textbf{Counterparty reliability} scoring (sellers, brokers, lenders, vendors)
+    \item \textbf{Reusable diligence memory} across similar deals and markets
+    \item \textbf{Living narratives}: notes and documents synthesized into deal and relationship stories
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Closing Autopilot \& Executive Copilot}
+  \textbf{Closing Autopilot}
+  \begin{itemize}\itemsep2pt
+    \item Dependency-aware closing workflows, automated chasing
+    \item Close-readiness score, funding risk visibility
+  \end{itemize}
+  \textbf{Executive Copilot}
+  \begin{itemize}\itemsep2pt
+    \item Daily / weekly operating briefs
+    \item Exception-based leadership---not task-by-task management
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Investor Growth Engine}
+  \begin{itemize}
+    \item Discovery, qualification, \textbf{fit scoring}, enrichment
+    \item Outreach suggestions, materials, \textbf{investor-room} orchestration
+    \item \textbf{Email-driven} decision tracking: interpret responses $\rightarrow$ proposed CRM updates
+    \item Self-service dashboards, AI Q\&A on investments, distribution forecasts
+  \end{itemize}
+\end{frame}
+
+\section{Growth \& lifecycle}
+
+\begin{frame}{AI as a growth engine (three axes)}
+  \begin{enumerate}
+    \item \textbf{Close deals faster} --- screening, diligence, closing compression
+    \item \textbf{Raise more capital} --- investor discovery, onboarding, intelligence
+    \item \textbf{Operate the portfolio} --- asset management, reporting, exceptions
+  \end{enumerate}
+\end{frame}
+
+\begin{frame}{Investor lifecycle (five stages)}
+  \small
+  \begin{enumerate}
+    \item \textbf{Discovery} --- who fits the mandate; autonomous research with human approval on outreach
+    \item \textbf{Qualification} --- capacity, sophistication, conflicts; checkpoints on classification
+    \item \textbf{Onboarding} --- materials, Q\&A, subscription workflow; legal/KYC human gates
+    \item \textbf{Active relationship} --- reporting, re-ups, co-invest; AI drafts, humans send
+    \item \textbf{Ongoing management} --- intelligence, churn risk, next-best-action suggestions
+  \end{enumerate}
+  \vspace{0.3em}
+  Each stage: \textbf{autonomous steps} + \textbf{explicit human checkpoints}.
+\end{frame}
+
+\begin{frame}{``Monday morning'' scenario}
+  \small
+  Before the executive sits down:
+  \begin{itemize}\itemsep3pt
+    \item New deals \textbf{scored} and ranked; weak names flagged early
+    \item Diligence \textbf{gaps and contradictions} surfaced with doc citations
+    \item \textbf{Hot investor} prospects and response patterns highlighted
+    \item \textbf{Drafts}: IC memos, weekly LP updates, committee decks (human edits)
+    \item Analyst load \textbf{rebalanced} against deadlines and skill
+  \end{itemize}
+  Leadership operates by \textbf{exception}, not by regenerating every slide.
+\end{frame}
+
+\section{Execution pipelines}
+
+\begin{frame}{Execution philosophy}
+  \small
+  Ship \textbf{execution pipelines}, not isolated features:
+  \begin{center}
+    Input $\rightarrow$ Analysis $\rightarrow$ Decision $\rightarrow$ Action $\rightarrow$ Feedback
+  \end{center}
+  Each pipeline is designed to replace a concrete human workflow, with explicit checkpoints for capital, legal, and regulated outreach.
+\end{frame}
+
+\begin{frame}{Pipeline 1: Deal intake and scoring}
+  \small
+  \textbf{DEAL INTAKE PIPELINE}
+  \begin{enumerate}
+    \item Deal uploaded or ingested
+    \item Extract structured fields
+    \item Run valuation scaffold and comp pull (internal + vendor)
+    \item Risk flags and policy checks
+    \item Deal score and suggested next stage
+  \end{enumerate}
+  \textbf{Output:} score, invest/hold/reject suggestion, key risks\\
+  \textbf{Replaces:} analyst first-pass screening
+\end{frame}
+
+\begin{frame}{Pipeline 2: Document intelligence}
+  \small
+  \textbf{DOCUMENT ANALYSIS PIPELINE}
+  \begin{enumerate}
+    \item Upload leases and contracts
+    \item Extract key terms and tables
+    \item Summaries with citations
+    \item Inconsistency and missing-clause flags
+    \item Link extracted facts to model assumptions
+  \end{enumerate}
+  \textbf{Output:} structured fields, diligence gaps, contradiction alerts\\
+  \textbf{Replaces:} manual first read and note-taking
+\end{frame}
+
+\begin{frame}{Pipeline 3: Investment decision}
+  \small
+  \textbf{INVESTMENT DECISION PIPELINE}
+  \begin{enumerate}
+    \item Pull comps and market overlays (CRE + macro)
+    \item Run IRR and scenario model
+    \item Merge document intelligence and checklist status
+    \item Risk synthesis
+    \item Recommendation with confidence and stated assumptions
+  \end{enumerate}
+  \textbf{Output:} recommendation, confidence band, assumption ledger, downside case\\
+  \textbf{Replaces:} fragmented IC prep across files
+\end{frame}
+
+\begin{frame}{Pipeline 4: Investor outreach}
+  \small
+  \textbf{INVESTOR ENGINE}
+  \begin{enumerate}
+    \item Identify relevant investors (mandate fit)
+    \item Enrich contacts (e.g.\ Apollo, Snov verification)
+    \item Draft outreach (human approval before send)
+    \item Track replies; update CRM graph
+    \item Conversion and ghosting hints
+  \end{enumerate}
+  \textbf{Output:} qualified lists, engagement state, audit trail\\
+  \textbf{Replaces:} manual chasing and spreadsheet status
+\end{frame}
+
+\begin{frame}{Pipeline 5: Reporting automation}
+  \small
+  \textbf{REPORTING PIPELINE}
+  \begin{enumerate}
+    \item Pull portfolio and fund metrics
+    \item Generate LP report draft and commentary
+    \item Human sign-off
+    \item Distribute and archive with log
+  \end{enumerate}
+  \textbf{Output:} investor reports, reproducible numbers, audit logs\\
+  \textbf{Replaces:} manual quarter-end assembly
+\end{frame}
+
+\section{Deal workspace}
+
+\begin{frame}{Deal page as decision surface}
+  \small
+  \textbf{Above the fold}
+  \begin{itemize}
+    \item Recommendation (invest / hold / reject) and confidence
+    \item IRR and downside scenario pointers
+    \item Top risks, missing data, next best action
+  \end{itemize}
+  The page must answer: \textit{what is the decision?} \textit{what blocks it?} \textit{what happens next?}
+\end{frame}
+
+\begin{frame}{Deal page structure (tabs)}
+  \small
+  \begin{itemize}
+    \item Overview (thesis, assumptions)
+    \item Financials (models, scenarios)
+    \item Documents (AI summaries and citations)
+    \item Due diligence checklist
+    \item Capital stack
+    \item Investor relations
+    \item Activity / audit trail
+  \end{itemize}
+\end{frame}
+
+\section{Automation ROI}
+
+\begin{frame}{Automation as ROI layer}
+  \small
+  \begin{itemize}
+    \item Deal stage automation (policy-bound transitions)
+    \item CRM updates from email and meeting signals
+    \item Task orchestration (who owns the next step)
+    \item Investor follow-ups and stale-pipeline nudges
+  \end{itemize}
+  \vspace{0.5em}
+  \centering
+  \textbf{Goal: remove coordination work}, not add another dashboard
+\end{frame}
+
+\section{Automation catalog}
+
+\begin{frame}{50 automation opportunities (grouped)}
+  \tiny
+  \begin{tabular}{cl}
+    \textbf{\#} & \textbf{Theme} \\
+    1--5   & Deal origination and screening \\
+    6--10  & Underwriting and financial analysis \\
+    11--18 & Document processing and intelligence \\
+    19--26 & Investor relations and capital raising \\
+    27--31 & Portfolio operations and asset management \\
+    32--36 & Reporting and communication \\
+    37--41 & Team operations and productivity \\
+    42--46 & Analytics and decision support \\
+    47--50 & Compliance and risk management \\
+  \end{tabular}
+  \vspace{0.5em}
+
+  \normalsize Detail lives in \texttt{docs/ai-automation-deep-expansion.md}.
+\end{frame}
+
+\begin{frame}{Autonomous pipelines with checkpoints (examples)}
+  \small
+  \textbf{1. Deal intake} --- ingest $\rightarrow$ normalize $\rightarrow$ score $\rightarrow$ \textit{human: go/no-go} $\rightarrow$ CRM graph update
+
+  \textbf{2. Investor outreach} --- segment $\rightarrow$ draft $\rightarrow$ \textit{human: approve send} $\rightarrow$ track replies $\rightarrow$ suggest CRM status
+
+  \textbf{3. Quarterly reporting} --- pull metrics $\rightarrow$ draft LP letter $\rightarrow$ \textit{human: sign-off} $\rightarrow$ distribute \& archive
+
+  \vspace{0.5em}
+  Checkpoints are \textbf{non-negotiable} for capital, legal, and regulatory touchpoints.
+\end{frame}
+
+\section{Governance \& moat}
+
+\begin{frame}{Oversight rhythm}
+  \begin{itemize}
+    \item \textbf{Daily} --- $\sim$15 minutes: exceptions, risk flags, capital/funding alerts
+    \item \textbf{Weekly} --- $\sim$60 minutes: pipeline, investor momentum, diligence themes
+    \item \textbf{Monthly} --- half day: strategy, mandate, integration and model changes
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{AI risk is business risk}
+  \small
+  \begin{itemize}
+    \item Wrong or overconfident recommendations
+    \item Data leakage across tenants or deals
+    \item Compliance and marketing-rule violations on outreach
+  \end{itemize}
+  Treat model outputs as \textbf{drafts}; committee, legal, and firm policy stay authoritative.
+\end{frame}
+
+\begin{frame}{Guardrails and monitoring}
+  \small
+  \textbf{Controls}
+  \begin{itemize}
+    \item Approval thresholds for sends, stage moves, and external posts
+    \item Tool allowlists and structured actions (no unconstrained agent browsing in prod)
+    \item Input validation, output schema checks, prompt-injection hardening
+  \end{itemize}
+  \textbf{Monitoring}
+  \begin{itemize}
+    \item Override rate, exception reasons, latency to decision
+    \item Retrieval quality and citation coverage on doc answers
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Intelligence that compounds}
+  \begin{itemize}
+    \item \textbf{Data flywheel} --- every deal and investor interaction improves models and rules
+    \item \textbf{Investor knowledge} accumulates across funds and vintages
+    \item \textbf{Process encoding} --- what worked becomes default playbooks
+    \item \textbf{Institutional memory} survives turnover
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Competitive moat}
+  \begin{itemize}
+    \item Proprietary \textbf{training data} and labels tied to \textit{your} outcomes
+    \item \textbf{Process encoding} competitors cannot copy without your operations
+    \item \textbf{Relationship intelligence} graph (not exportable as a CSV)
+    \item \textbf{Speed} and \textbf{cost structure} once automation is embedded
+  \end{itemize}
+\end{frame}
+
+\section{Integration fabric}
+
+\begin{frame}{Integration principles}
+  \small
+  \begin{itemize}
+    \item Server-side connectors only; secrets in vault or managed identity
+    \item Per-vendor rate limits, caching, and schema validation at the boundary
+    \item Audit log of \textbf{what} was fetched and \textbf{when} it influenced a decision
+    \item Demo vs production keys separated (no accidental outbound in stakeholder demos)
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Financial and CRE market data}
+  \small
+  \textbf{Macro and rates (baseline)}
+  \begin{itemize}
+    \item FRED / central-bank series: curve context, discount-rate sanity checks, briefing charts
+  \end{itemize}
+  \textbf{Commercial real estate comps}
+  \begin{itemize}
+    \item CompStak, Reonomy, CoStar-class feeds (license-bound), RentCast-style rent snapshots
+  \end{itemize}
+  \textbf{Institutional capital markets (enterprise)}
+  \begin{itemize}
+    \item Bloomberg (B-PIPE / Data License), LSEG Refinitiv, ICE Data Services --- CMBS, credit indices, benchmarks
+  \end{itemize}
+  Wiring priority: \textbf{one golden path} per category, then expand entitlements.
+\end{frame}
+
+\begin{frame}{Prospecting and enrichment}
+  \small
+  \begin{itemize}
+    \item \textbf{Apollo.io} --- accounts and contacts, intent-style lists, sequence-ready exports into governed workflows
+    \item \textbf{Snov.io} --- find--verify loops and deliverability checks before investor or broker outreach
+    \item \textbf{Grata, ZoomInfo-class} --- firmographic filters where Apollo coverage is thin
+    \item \textbf{Clearbit / People Data Labs} (optional) --- enrichment behind consent and retention policy
+  \end{itemize}
+  All outbound messaging requires \textbf{human approval} and jurisdictional review where required.
+\end{frame}
+
+\begin{frame}{Connector catalog (expanded)}
+  \tiny
+  \begin{columns}[T]
+    \begin{column}{0.5\textwidth}
+      \textbf{Identity \& productivity}
+      \begin{itemize}\itemsep0pt
+        \item Microsoft Entra ID, Microsoft Graph
+        \item Gmail / Google Calendar
+        \item Slack, Microsoft Teams
+        \item Zoom, Calendly
+      \end{itemize}
+      \textbf{AI and data plane}
+      \begin{itemize}\itemsep0pt
+        \item Azure OpenAI, Azure AI Search
+        \item Azure Blob Storage, Service Bus, Functions
+      \end{itemize}
+      \textbf{Market and filings}
+      \begin{itemize}\itemsep0pt
+        \item FRED (macro), CompStak / Reonomy / RentCast
+        \item Bloomberg / Refinitiv / ICE (licensed)
+        \item SEC EDGAR and comparable filings sources
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.5\textwidth}
+      \textbf{GTM and CRM}
+      \begin{itemize}\itemsep0pt
+        \item Apollo.io, Snov.io, Grata
+        \item Salesforce / HubSpot (when CRM sync is required)
+      \end{itemize}
+      \textbf{Capital formation}
+      \begin{itemize}\itemsep0pt
+        \item Juniper Square, iCapital / Parallel Markets
+        \item Alloy (KYC/AML), Plaid (where applicable)
+      \end{itemize}
+      \textbf{Document and close}
+      \begin{itemize}\itemsep0pt
+        \item DocuSign, Dropbox Sign
+        \item Yardi, AppFolio (ops and reporting)
+      \end{itemize}
+    \end{column}
+  \end{columns}
+  \vspace{0.3em}
+  \normalsize Catalog in-product: \texttt{/integrations}; depth in \texttt{docs/ai-automation-operator-perspective-expansion.md}.
+\end{frame}
+
+\section{Unit economics and rollout}
+
+\begin{frame}{Illustrative operating lift (not a forecast)}
+  \small
+  \textbf{Baseline (example)}
+  \begin{itemize}
+    \item 20 deals/month reviewed, 2 closed, $\sim$25h analyst time per deal
+  \end{itemize}
+  \textbf{With automation (example)}
+  \begin{itemize}
+    \item 40 deals/month reviewed, 3--4 closed, $\sim$10h per deal
+  \end{itemize}
+  Validate with \textbf{your} funnel data: time-to-IC, override rate, hours logged.
+\end{frame}
+
+\begin{frame}{Execution plan}
+  \small
+  \begin{itemize}
+    \item Start with \textbf{one} end-to-end pipeline (intake $\rightarrow$ decision surface)
+    \item Add guardrails and measurement (time stages, hours, conversion)
+    \item Layer market and enrichment integrations as contracts allow
+    \item Scale playbooks only after audit trail and rollback are boring
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Summary}
+  \begin{itemize}
+    \item Ground automation in \textbf{real operator calendars} and pain
+    \item \textbf{Decision Compression} + graph + closing + executive copilot + investor engine
+    \item \textbf{Execution pipelines} replace workflows; \textbf{integrations} feed comps, macro, and prospecting
+    \item \textbf{50} themed automations; human gates on capital and regulated outreach
+    \item \textbf{Compounding} data and relationships as the long-term moat
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \centering
+  \Large Thank you.\\
+  \vspace{1em}
+  \normalsize Questions
+\end{frame}
+
+\end{document}

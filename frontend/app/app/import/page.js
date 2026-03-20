@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useMemo, useState } from "react";
 
-import AppShell from "../../components/app-shell";
-import { authHeaders, clearStoredAuth, getApiBase, getStoredAuth } from "../../lib/reos-client";
+import { useAuth } from "../../components/auth-provider";
+import PageFrame from "../../components/page-frame";
+import { authHeaders, fetchJson, getApiBase } from "../../lib/reos-client";
 
 const importModes = [
   { id: "deals_contacts", label: "Deals + Contacts" },
@@ -14,10 +14,7 @@ const importModes = [
 
 export default function ImportPage() {
   const API = getApiBase();
-  const router = useRouter();
-  const [token, setToken] = useState("");
-  const [username, setUsername] = useState("");
-  const [role, setRole] = useState("");
+  const { auth } = useAuth();
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState("");
 
@@ -30,18 +27,7 @@ export default function ImportPage() {
       "deal_name,filename,document_type,summary,risk_tags,content\nUnion Station Office,union_station_om.txt,offering_memo,Core office summary,lease_roll,Imported metadata content",
   };
 
-  const headers = useMemo(() => authHeaders(token, null), [token]);
-
-  useEffect(() => {
-    const auth = getStoredAuth();
-    if (!auth?.token) {
-      router.push("/login");
-      return;
-    }
-    setToken(auth.token);
-    setRole(auth.role || "member");
-    setUsername(auth.username || "");
-  }, [router]);
+  const headers = useMemo(() => authHeaders(auth?.token, null), [auth?.token]);
 
   async function uploadImport(e) {
     e.preventDefault();
@@ -53,55 +39,45 @@ export default function ImportPage() {
     try {
       const req = new FormData();
       req.append("file", file);
-      const res = await fetch(`${API}/imports/csv?import_type=${encodeURIComponent(String(importType))}`, {
+      const data = await fetchJson(`${API}/imports/csv?import_type=${encodeURIComponent(String(importType))}`, {
         method: "POST",
         headers,
         body: req,
       });
-      const data = await res.json();
-      if (!res.ok) {
-        setMessage(data.detail || "Import failed.");
-        return;
-      }
       setMessage(`Imported ${data.rows_imported} rows for ${data.import_type}.`);
       e.currentTarget.reset();
+    } catch (error) {
+      setMessage(error.message || "Import failed.");
     } finally {
       setBusy("");
     }
   }
 
-  function logout() {
-    clearStoredAuth();
-    router.push("/login");
-  }
-
   return (
-    <AppShell
-      title="Import Center"
-      subtitle="Load local CSV spreadsheets for deals, investor pipeline, and document metadata before external APIs are connected."
-      username={username}
-      role={role}
-      onLogout={logout}
+    <PageFrame
+      eyebrow="AI & Documents"
+      title="Import center"
+      subtitle="Load spreadsheet data into deals, investor pipeline, and document metadata so the enterprise shell starts from real operating context."
     >
-      {message ? <p className="message">{message}</p> : null}
-      <section className="grid">
+      {message ? <p className="inline-alert">{message}</p> : null}
+      <section className="content-grid three-column-grid">
         {importModes.map((mode) => (
-          <div className="card" key={mode.id}>
+          <div className="surface-card" key={mode.id}>
             <h2>{mode.label}</h2>
-            <p className="muted-line">Upload a CSV file using the template shown below.</p>
+            <p className="muted-copy">Upload a CSV or XLSX file using the field order shown below.</p>
             <form onSubmit={uploadImport} className="stack-form">
               <input type="hidden" name="import_type" value={mode.id} />
-              <input name="file" type="file" accept=".csv" required />
+              <input name="file" type="file" accept=".csv,.xlsx" required />
               <button type="submit" disabled={busy === mode.id}>
                 {busy === mode.id ? "Importing..." : `Import ${mode.label}`}
               </button>
             </form>
-            <div className="code-card">
+            <div className="code-card enterprise-code">
               <pre>{rawExamples[mode.id]}</pre>
             </div>
           </div>
         ))}
       </section>
-    </AppShell>
+    </PageFrame>
   );
 }

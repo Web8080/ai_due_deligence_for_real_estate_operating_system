@@ -11,3 +11,4 @@ pillow
 passlib[bcrypt]
 pytest
 openpyxl
+pyjwt[crypto]

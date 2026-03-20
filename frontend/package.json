@@ -3,9 +3,9 @@
   "version": "1.0.0",
   "description": "REOS frontend",
   "scripts": {
-    "dev": "next dev -p 3000",
+    "dev": "next dev -p 30001 -H 0.0.0.0",
     "build": "next build",
-    "start": "next start -p 3000"
+    "start": "next start -p 30001"
   },
   "keywords": [],
   "author": "Victor.I",

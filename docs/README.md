@@ -21,6 +21,8 @@ This folder contains the architecture and execution documentation for a prototyp
 - `ai-automation-strategic-proposal.md` - Strategic proposal for AI automation layers, custom ML, integrations, and governance.
 - `ai-automation-deep-expansion.md` - Deep expansion: daily operations, growth automation, investor lifecycle, and 50 automation opportunities.
 - `reos_enterprise_ai_automation_master.tex` - Unified hybrid stakeholder and engineering master document for LaTeX/PDF output.
+- `reos-ai-automation-overleaf-presentation.tex` - Executive / product Beamer deck (pipelines, integrations narrative).
+- `reos-technical-architecture-lead-review.tex` - Engineering-lead Beamer deck (TikZ diagrams, workflows, security, delivery plan).
 - `cursor-multi-agent-execution-x3.md` - Parallel agent setup and prompts for Cursor.
 - `interview-preparation-guide.md` - Whiteboard narrative and interview Q&A.
 

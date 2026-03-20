@@ -1,118 +1,123 @@
 "use client";
+// Author: Victor.I
+// Local signup only when the API exposes it; avoids fake success on 409/403 from the server.
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
-function getApiBase() {
-  if (process.env.NEXT_PUBLIC_API_BASE_URL) return process.env.NEXT_PUBLIC_API_BASE_URL;
-  if (typeof window !== "undefined") return `${window.location.protocol}//${window.location.hostname}:8000`;
-  return "http://localhost:8000";
-}
+import { fetchJson, getApiBase, getStoredAuth } from "../lib/reos-client";
 
 export default function SignupPage() {
   const API = getApiBase();
   const router = useRouter();
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
-  const [workEmail, setWorkEmail] = useState("");
-  const [organization, setOrganization] = useState("");
-  const [department, setDepartment] = useState("");
-  const [phone, setPhone] = useState("");
   const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [role, setRole] = useState("analyst");
-  const [agreePolicy, setAgreePolicy] = useState(false);
+  const [displayName, setDisplayName] = useState("");
+  const [signupOpen, setSignupOpen] = useState(false);
   const [message, setMessage] = useState("");
+  const [success, setSuccess] = useState("");
+  const [busy, setBusy] = useState(false);
 
-  async function onSignup(e) {
+  useEffect(() => {
+    const existing = getStoredAuth();
+    if (existing?.token) {
+      router.replace("/app");
+      return;
+    }
+    fetchJson(`${API}/auth/providers`)
+      .then((payload) => {
+        setSignupOpen(Boolean(payload.local_signup_enabled));
+        setMessage("");
+      })
+      .catch(() => setMessage("Cannot reach auth service. Start the backend on port 8000."));
+  }, [API, router]);
+
+  async function onSubmit(e) {
     e.preventDefault();
     setMessage("");
-    if (password !== confirmPassword) {
-      setMessage("Password confirmation does not match.");
-      return;
+    setSuccess("");
+    setBusy(true);
+    try {
+      const body = await fetchJson(`${API}/auth/signup`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          username: username.trim(),
+          email: email.trim() || undefined,
+          password,
+          display_name: displayName.trim() || undefined,
+        }),
+      });
+      setSuccess(body.message || "Account created. Sign in with your new credentials.");
+      setUsername("");
+      setEmail("");
+      setPassword("");
+      setDisplayName("");
+    } catch (err) {
+      setMessage(err?.message || "Signup failed");
+    } finally {
+      setBusy(false);
     }
-    if (!agreePolicy) {
-      setMessage("You must accept the organization usage policy.");
-      return;
-    }
-    const res = await fetch(`${API}/auth/signup`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username, password, role }),
-    });
-    const data = await res.json();
-    if (!res.ok) {
-      setMessage(data.detail || "Signup failed");
-      return;
-    }
-    setMessage(`User ${data.username} created. You can login now.`);
-    setTimeout(() => router.push("/login"), 900);
   }
 
   return (
-    <main className="container page-full">
-      <section className="card auth-card auth-card-wide">
-        <p className="eyebrow">Organization Onboarding</p>
-        <h1 className="title">Create account</h1>
-        <p className="hero-copy">Create a user identity for your team and start working in the REOS workspace.</p>
-        <form className="stack-form" onSubmit={onSignup}>
-          <div className="signup-form-grid">
-            <input value={firstName} onChange={(e) => setFirstName(e.target.value)} placeholder="First name" required />
-            <input value={lastName} onChange={(e) => setLastName(e.target.value)} placeholder="Last name" required />
-            <input
-              value={workEmail}
-              onChange={(e) => {
-                setWorkEmail(e.target.value);
-                if (!username) {
-                  const generated = e.target.value.split("@")[0] || "";
-                  setUsername(generated.toLowerCase());
-                }
-              }}
-              placeholder="Work email"
-              type="email"
-              required
-            />
-            <input
-              value={organization}
-              onChange={(e) => setOrganization(e.target.value)}
-              placeholder="Organization name"
-              required
-            />
-            <input value={department} onChange={(e) => setDepartment(e.target.value)} placeholder="Department" required />
-            <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Phone number" />
-          </div>
-          <input value={username} onChange={(e) => setUsername(e.target.value)} placeholder="Username" required />
-          <input
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="Password"
-            type="password"
-            required
-          />
-          <input
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            placeholder="Confirm password"
-            type="password"
-            required
-          />
-          <select value={role} onChange={(e) => setRole(e.target.value)}>
-            <option value="analyst">analyst</option>
-            <option value="manager">manager</option>
-            <option value="admin">admin</option>
-          </select>
-          <label className="checkbox-row">
-            <input type="checkbox" checked={agreePolicy} onChange={(e) => setAgreePolicy(e.target.checked)} />
-            <span>I confirm this user is authorized to access organization deal data.</span>
-          </label>
-          <button type="submit">Create Account</button>
-        </form>
-        {message && <p className="message">{message}</p>}
-        <p className="back-link">
-          <Link href="/login">Back to login</Link>
-        </p>
+    <main className="auth-shell">
+      <section className="auth-stage auth-stage-wide">
+        <div className="auth-copy">
+          <p className="section-eyebrow">REOS</p>
+          <h1>Create a sandbox account</h1>
+          <p>
+            When enabled on the API, signup creates an analyst user locally. Microsoft Entra remains the enterprise path when
+            configured.
+          </p>
+        </div>
+
+        <div className="auth-panel">
+          {!signupOpen ? (
+            <>
+              <h2>Signup is off by default</h2>
+              <p className="muted-copy">
+                Set <code>REOS_ALLOW_LOCAL_SIGNUP=true</code> alongside local login on the backend. Default operators continue to
+                use bootstrap users (see backend/.env.example).
+              </p>
+              <p className="back-link">
+                <Link href="/login">Back to sign in</Link>
+              </p>
+            </>
+          ) : (
+            <>
+              <p className="section-eyebrow">New user</p>
+              <h2>Register</h2>
+              <form className="stack-form" onSubmit={onSubmit}>
+                <input value={username} onChange={(e) => setUsername(e.target.value)} placeholder="Username" required minLength={3} />
+                <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email" type="email" required />
+                <input
+                  value={displayName}
+                  onChange={(e) => setDisplayName(e.target.value)}
+                  placeholder="Display name (optional)"
+                />
+                <input
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Password (min 10 characters)"
+                  type="password"
+                  required
+                  minLength={10}
+                />
+                <button type="submit" disabled={busy}>
+                  {busy ? "Creating..." : "Create account"}
+                </button>
+              </form>
+              {success ? <p className="inline-alert alert-success">{success}</p> : null}
+              {message ? <p className="inline-alert alert-error">{message}</p> : null}
+              <p className="back-link">
+                <Link href="/login">Already have access? Sign in</Link>
+              </p>
+            </>
+          )}
+        </div>
       </section>
     </main>
   );

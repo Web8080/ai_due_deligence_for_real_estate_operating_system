@@ -79,6 +79,20 @@ python orchestrator/nonstop_orchestrator.py --hours 3 --sleep-seconds 20 --run-a
 
 No web signup is required for these fallback modes.
 
+## CRM: companies, contacts, email paste import
+
+- **Companies:** `GET/POST /crm/companies`, `PATCH /crm/companies/{id}` for notes and investor type.
+- **Contacts:** `POST /crm/contacts`, `PATCH /crm/contacts/{id}`, `GET /crm/contacts`.
+- **Email:** `POST /crm/email-import/preview` (authenticated) parses pasted threads; `POST /crm/email-import/commit` stores `investor_email_signals` and optionally updates `investor_pipeline_entries` when a deal is selected. Microsoft Graph / Gmail remain integration work.
+
+## Product demo posture (no vendor wiring)
+
+For stakeholder walkthroughs where integrations should read as specifications only:
+
+- Set `REOS_PRODUCT_DEMO_MODE=true` on the API. The integration catalog and login screen carry an explicit demo notice; nothing in that mode implies live vendor sessions.
+- Optional sandbox accounts: `REOS_ALLOW_LOCAL_SIGNUP=true` (only with `REOS_LOCAL_LOGIN_ENABLED=true`). New users are always role `analyst`.
+- `POST /demo/seed` is limited to `admin` and `manager` so analysts do not overwrite shared demo databases by accident.
+
 ## Azure Integration Prep
 
 For company Azure rollout, keep these values in `.env` (do not commit):

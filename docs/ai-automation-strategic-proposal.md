@@ -1,6 +1,6 @@
 Author: Victor.I
 
-# AI and Automation Strategic Proposal for Real Estate Operating System
+# AI and Automation Strategic Proposal for Real Estate Operating System v.1.1
 
 ## Table of Contents
 

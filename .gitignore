@@ -18,5 +18,6 @@ uploads/
 test-results.json
 test-automation.js
 backend/reos.db
+reos_local_mvp.db
 backend/uploads/
 orchestrator/logs/
