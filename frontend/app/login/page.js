@@ -32,7 +32,9 @@ export default function LoginPage() {
         setMessage("");
       })
       .catch(() => {
-        setMessage("Cannot reach auth service. Start the backend on port 8000.");
+        setMessage(
+          "Cannot reach auth service. Start the API on port 8000 and restart Next (proxy /api/reos). See docs/run-local.md."
+        );
       });
   }, [API, router]);
 
@@ -50,7 +52,11 @@ export default function LoginPage() {
       router.push("/app");
     } catch (error) {
       const msg = error?.message || "Login failed";
-      setMessage(msg === "Failed to fetch" ? "Backend unreachable. Start the API on port 8000 and set REOS_LOCAL_LOGIN_ENABLED=true." : msg);
+      setMessage(
+        msg === "Failed to fetch" || (msg && msg.startsWith("Failed to fetch"))
+          ? "Backend unreachable. Start the API on port 8000, set REOS_LOCAL_LOGIN_ENABLED=true in backend/.env, restart Next (uses /api/reos proxy)."
+          : msg
+      );
     } finally {
       setBusy("");
     }

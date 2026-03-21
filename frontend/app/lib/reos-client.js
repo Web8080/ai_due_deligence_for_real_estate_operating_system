@@ -1,9 +1,15 @@
 "use client";
 
+/**
+ * API base for fetch().
+ * - Default in the browser: same-origin proxy `/api/reos` (see next.config.mjs rewrites) so CORS and LAN hostnames do not break calls.
+ * - Override with NEXT_PUBLIC_API_BASE_URL when the UI must talk to a separate API host (production or custom dev).
+ */
 export function getApiBase() {
-  if (process.env.NEXT_PUBLIC_API_BASE_URL) return process.env.NEXT_PUBLIC_API_BASE_URL;
-  if (typeof window !== "undefined") return `${window.location.protocol}//${window.location.hostname}:8000`;
-  return "http://localhost:8000";
+  const explicit = (process.env.NEXT_PUBLIC_API_BASE_URL || "").trim().replace(/\/$/, "");
+  if (explicit) return explicit;
+  if (typeof window !== "undefined") return "/api/reos";
+  return (process.env.REOS_INTERNAL_API_URL || "http://127.0.0.1:8000").replace(/\/$/, "");
 }
 
 export function getStoredAuth() {
@@ -65,7 +71,17 @@ function formatApiError(payload) {
 }
 
 export async function fetchJson(url, options = {}) {
-  const response = await fetch(url, options);
+  let response;
+  try {
+    response = await fetch(url, options);
+  } catch (err) {
+    const base = typeof window !== "undefined" ? getApiBase() : "";
+    const hint =
+      base === "/api/reos"
+        ? " Check that the Next dev server can reach the API (REOS_API_PROXY_TARGET in .env.local defaults to http://127.0.0.1:8000)."
+        : " Check that the API is running, CORS allows this origin, and NEXT_PUBLIC_API_BASE_URL is correct if set.";
+    throw new Error((err?.message || "Failed to fetch") + hint);
+  }
   const payload = await response.json().catch(() => ({}));
   if (!response.ok) {
     throw new Error(formatApiError(payload));

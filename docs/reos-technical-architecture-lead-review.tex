@@ -436,9 +436,85 @@
   \end{itemize}
 \end{frame}
 
-\begin{frame}
+%------------------------------------------------------------------
+\section{Anticipated Q\&A}
+
+\begin{frame}{Q\&A: architecture and AI trust (1/5)}
+  \footnotesize
+  \textbf{Q1: Why not microservices from day one?}
+  \textit{Tests:} scaling judgment vs.\ hype.
+
+  \textbf{Answer:} The bottleneck is \textbf{decision latency and workflow clarity}, not service independence. A modular monolith yields faster iteration, strong transactional consistency, and simpler observability. Services are extracted only when metrics justify it (queue saturation, ownership boundaries).
+
+  \textbf{If pushed:} Microservices add operational tax---distributed tracing, failure modes, coordination cost. We avoid that until scale demands it. Trade-offs over trends.
+
+  \vspace{0.4em}
+  \textbf{Q2: How do you handle hallucinations in the AI layer?}
+  \textit{Tests:} production trust.
+
+  \textbf{Answer:} We do not ship raw LLM prose as fact. Answers are \textbf{retrieval-grounded} with explicit citation requirements. If evidence is missing, the system returns insufficient evidence---it does not guess.
+
+  \textbf{Also:} Override rates are tracked; releases are gated by evaluation on known datasets where applicable.
+\end{frame}
+
+\begin{frame}{Q\&A: resilience and data architecture (2/5)}
+  \footnotesize
+  \textbf{Q3: What happens when a vendor API fails?}
+  \textit{Tests:} resilience.
+
+  \textbf{Answer:} Integrations sit behind adapters with retries and exponential backoff, circuit breakers, caching where safe, and feature flags to disable a connector instantly. The product \textbf{degrades gracefully}: core deal and workflow paths are not hard-blocked on optional vendors.
+
+  \vspace{0.4em}
+  \textbf{Q4: Why is Postgres the source of truth instead of the vector DB?}
+  \textit{Tests:} data maturity.
+
+  \textbf{Answer:} Vectors are \textbf{derived}; they are not authoritative. Source of truth is structured transactional state plus stored documents. Embeddings can be rebuilt from blobs and parser versions. Losing the relational database means losing the business---that is what must be hardened first.
+\end{frame}
+
+\begin{frame}{Q\&A: security and primary risk (3/5)}
+  \footnotesize
+  \textbf{Q5: How do you secure this many integrations?}
+  \textit{Tests:} enterprise readiness.
+
+  \textbf{Answer:} Hard rule: \textbf{no external API calls from the browser}. All vendor traffic goes through the backend with server-side auth, secrets in Key Vault (or equivalent), audit metadata per outbound request, and RBAC on who can trigger which capability. Per-connector rate limits and data classification drive caching TTL and logging depth.
+
+  \vspace{0.4em}
+  \textbf{Q6: What is the biggest technical risk?}
+  \textit{Tests:} honesty under pressure.
+
+  \textbf{Answer:} \textbf{Document ingestion quality and consistency.} OCR variance and messy PDFs can poison downstream reasoning. Mitigation: confidence scoring, human verification queues for low-confidence extractions, parser versioning, and replay so fixes do not require manual rework.
+\end{frame}
+
+\begin{frame}{Q\&A: success metrics and sequencing (4/5)}
+  \footnotesize
+  \textbf{Q7: How do we measure success?}
+  \textit{Tests:} outcome thinking.
+
+  \textbf{Answer:} Leading indicators tied to the thesis, not generic ``efficiency'': time from deal intake to IC decision, analyst hours per deal, automation override rate, document ingestion SLA, and deal throughput per team. If those do not move, the program failed---feature count is irrelevant.
+
+  \vspace{0.4em}
+  \textbf{Q8: What do we build first?}
+  \textit{Tests:} focus.
+
+  \textbf{Answer:} \textbf{Deal intake and scoring pipeline}---highest volume, bounded risk, immediate analyst load reduction. Expand connectors and automation only after that path is production-grade and measurable.
+\end{frame}
+
+\begin{frame}{Q\&A: shipping discipline and rollout (5/5)}
+  \footnotesize
+  \textbf{Q9: How do we avoid over-engineering?}
+  \textit{Tests:} ability to ship.
+
+  \textbf{Answer:} \textbf{One golden pipeline per phase}---no parallel architectural experiments until the current pipeline meets acceptance criteria. If dates slip, cut connector breadth before cutting core integrity (audit, RBAC, backups, rollback).
+
+  \vspace{0.4em}
+  \textbf{Q10: What is the rollout plan?}
+  \textit{Tests:} delivery maturity.
+
+  \textbf{Answer:} Three-stage progression: \textbf{Local}---validate workflows and contracts; \textbf{Staging}---enterprise identity, AI evaluation harness, integration soak; \textbf{Production}---hardened infra, monitoring, governance sign-off. Each stage has explicit acceptance criteria before the next gate opens.
+
+  \vspace{0.5em}
   \centering
-  \Large Technical Q\&A
+  \normalsize Open technical discussion
 \end{frame}
 
 \appendix

@@ -1,5 +1,14 @@
 # Author: Victor.I
+from pathlib import Path
 import os
+
+try:
+    from dotenv import load_dotenv
+
+    _backend_dir = Path(__file__).resolve().parent.parent
+    load_dotenv(_backend_dir / ".env")
+except ImportError:
+    pass
 
 from sqlalchemy import create_engine, inspect
 from sqlalchemy.orm import declarative_base, sessionmaker

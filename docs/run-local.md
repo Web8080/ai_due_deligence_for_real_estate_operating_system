@@ -23,16 +23,75 @@ cd backend
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
+cp .env.example .env
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+```
+
+After `cp`, edit `.env` if you want a fixed `REOS_SESSION_SECRET` (otherwise a random secret is used each restart).
+
+If the UI shows **Local recovery login is disabled**, `REOS_LOCAL_LOGIN_ENABLED` is not set to `true` for the API process. Fix: ensure `backend/.env` exists (see above) or export `REOS_LOCAL_LOGIN_ENABLED=true` before starting uvicorn.
+
+### Troubleshooting
+
+**`ERROR: Invalid requirement: '#'`**  
+`pip` is seeing a stray `#` (usually from copy-pasting a comment on the same line as `pip install`). Run dependencies on its own line, nothing after it:
+
+```bash
+pip install -r requirements.txt
+```
+
+**`ERROR: [Errno 48] Address already in use` (port 8000)**  
+Another uvicorn (or process) is bound to 8000. Free it, then start again:
+
+```bash
+lsof -ti :8000 | xargs kill -9
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
 ## Frontend
+
+The UI calls the API through a **same-origin proxy** at `/api/reos/*` implemented by `frontend/app/api/reos/[[...path]]/route.js`. The Next.js server forwards to `http://127.0.0.1:8000` by default, which avoids **CORS** and many **Failed to fetch** cases. If the API is down, the proxy returns **502** with a JSON hint instead of a bare network error.
+
+Override the proxy target if the API is not on loopback:
+
+```bash
+# frontend/.env.local
+REOS_API_PROXY_TARGET=http://127.0.0.1:8000
+```
+
+To bypass the proxy and call the API host directly from the browser (you must allow that origin in the API CORS list):
+
+```bash
+NEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:8000
+```
 
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
+
+Restart `npm run dev` after changing `next.config.mjs` or `.env.local`.
+
+**`EADDRINUSE` on port 30001**  
+The dev server defaults to `30001`. A previous `next dev` (or another app) may still own the port:
+
+```bash
+lsof -ti :30001 | xargs kill -9
+cd frontend && npm run dev
+```
+
+**`Couldn't find any pages or app directory`**  
+You started Next from the **repo root**. The UI lives under **`frontend/`**:
+
+```bash
+cd frontend
+npm run dev
+# alternate port (still from frontend/):
+npx next dev -p 30002 -H 0.0.0.0
+```
+
+Running `npx next dev` at the monorepo root uses the wrong project root and will not see `frontend/app`.
 
 ## Smoke Tests
 

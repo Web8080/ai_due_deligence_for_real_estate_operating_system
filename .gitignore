@@ -11,6 +11,7 @@ frontend/.next/
 
 # Runtime
 .env
+frontend/.env.local
 *.log
 .DS_Store
 reos.db
