@@ -1,0 +1,65 @@
+{
+  "description": "Retrieval eval dataset for REOS RAG. Each case has a question, a set of candidate passages (one relevant, rest distractors), and the id of the passage that must rank first.",
+  "cases": [
+    {
+      "id": "lease-term",
+      "question": "What is the remaining lease term for the anchor tenant?",
+      "expected_passage": "p1",
+      "passages": [
+        {"id": "p1", "text": "The anchor tenant, Lakeside Grocers, has a remaining lease term of 7 years with two 5-year renewal options at fixed escalations of 2.5% annually."},
+        {"id": "p2", "text": "Parking ratios at the property are 4.2 spaces per 1,000 square feet, exceeding the municipal minimum requirement."},
+        {"id": "p3", "text": "The roof was replaced in 2021 with a TPO membrane carrying a 20-year manufacturer warranty."}
+      ]
+    },
+    {
+      "id": "environmental-risk",
+      "question": "Were any environmental issues identified in the Phase I assessment?",
+      "expected_passage": "p2",
+      "passages": [
+        {"id": "p1", "text": "The property's net operating income for the trailing twelve months was $2.4 million on revenues of $3.6 million."},
+        {"id": "p2", "text": "The Phase I environmental site assessment identified a recognized environmental condition related to a former dry cleaning operation on an adjacent parcel; a Phase II subsurface investigation is recommended."},
+        {"id": "p3", "text": "Zoning for the parcel is C-2 commercial, permitting retail, office, and restaurant uses by right."}
+      ]
+    },
+    {
+      "id": "loan-maturity",
+      "question": "When does the existing loan mature and what is the interest rate?",
+      "expected_passage": "p3",
+      "passages": [
+        {"id": "p1", "text": "Tenant improvement allowances for new leases average $35 per square foot across recent comparable transactions."},
+        {"id": "p2", "text": "The property management agreement carries a fee of 3% of effective gross income and renews annually."},
+        {"id": "p3", "text": "The existing senior loan matures in March 2028, bears interest at a fixed rate of 5.85%, and carries a yield maintenance prepayment penalty through maturity."}
+      ]
+    },
+    {
+      "id": "occupancy",
+      "question": "What is the current occupancy rate of the building?",
+      "expected_passage": "p1",
+      "passages": [
+        {"id": "p1", "text": "As of the rent roll dated June 1, the building is 93.5% occupied across 41 of 44 suites, with weighted average lease expiry of 4.2 years."},
+        {"id": "p2", "text": "Insurance premiums increased 18% year over year, driven by regional wind and hail exposure."},
+        {"id": "p3", "text": "The seller has provided three years of audited financial statements and a draft purchase and sale agreement."}
+      ]
+    },
+    {
+      "id": "capex",
+      "question": "What capital expenditures are projected for the next five years?",
+      "expected_passage": "p2",
+      "passages": [
+        {"id": "p1", "text": "Broker opinion of value places the asset between $38 million and $42 million based on a 6.25% cap rate."},
+        {"id": "p2", "text": "The property condition report projects capital expenditures of $1.8 million over the next five years, primarily HVAC replacement in years two and three and parking lot resurfacing in year four."},
+        {"id": "p3", "text": "Average in-place rents are 8% below market according to the appraisal's comparable lease analysis."}
+      ]
+    },
+    {
+      "id": "litigation",
+      "question": "Is there any pending litigation involving the property or seller?",
+      "expected_passage": "p3",
+      "passages": [
+        {"id": "p1", "text": "Real estate taxes were reassessed last year, resulting in a 12% increase in the annual tax liability."},
+        {"id": "p2", "text": "The title commitment lists standard utility easements along the northern boundary of the parcel."},
+        {"id": "p3", "text": "Seller disclosures indicate one pending litigation matter: a slip-and-fall claim filed in 2025, fully tendered to the property's general liability carrier with no expected uninsured exposure."}
+      ]
+    }
+  ]
+}
